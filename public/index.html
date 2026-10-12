@@ -8,6 +8,43 @@
     <meta name="robots" content="noindex, nofollow" />
     <link rel="canonical" href="https://puc.physicspeptalk.com/" />
     <link rel="icon" type="image/png" href="/favicon.png" />
+    <!--
+      SPA redirect receiver.
+      Works with the companion 404.html script.
+      Restores the original clean URL from the encoded query parameter "p".
+    -->
+    <script>
+      (function () {
+        var redirect = sessionStorage.redirect;
+        delete sessionStorage.redirect;
+        if (redirect && redirect !== location.href) {
+          history.replaceState(null, null, redirect);
+        }
+        // Decode the ?p= path set by 404.html
+        var l = window.location;
+        if (l.search.slice(1).split("&")[0].split("=")[0] === "p") {
+          var decoded = l.search
+            .slice(1)
+            .split("&")
+            .reduce(function (memo, item) {
+              var parts = item.split("=");
+              memo[parts[0]] = parts
+                .slice(1)
+                .join("=")
+                .replace(/~and~/g, "&");
+              return memo;
+            }, {});
+          window.history.replaceState(
+            null,
+            null,
+            l.pathname.slice(0, -1) +
+              (decoded.p ? "/" + decoded.p.replace(/~/g, "/") : "") +
+              (decoded.q ? "?" + decoded.q : "") +
+              l.hash
+          );
+        }
+      })();
+    </script>
   </head>
   <body>
     <p>
