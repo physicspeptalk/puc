@@ -475,8 +475,6 @@ function FeaturedCourses() {
       id="courses"
       className="section-pad bg-surface-50"
       aria-label="Featured courses"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
     >
       <div className="container-pad">
         <div className="text-center mb-12">
@@ -537,7 +535,13 @@ function FeaturedCourses() {
                         >
                           {paddedSlide.map((c, i) =>
                             c ? (
-                              <CourseCard key={c.courseUrl || `${slideIdx}-${i}`} course={c} />
+                              <div
+                                key={c.courseUrl || `${slideIdx}-${i}`}
+                                onMouseEnter={() => setPaused(true)}
+                                onMouseLeave={() => setPaused(false)}
+                              >
+                                <CourseCard course={c} />
+                              </div>
                             ) : (
                               <div key={`empty-${slideIdx}-${i}`} className="invisible" aria-hidden="true" />
                             )
