@@ -395,7 +395,6 @@ function FeaturedCourses() {
 
   const [current, setCurrent] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [animDir, setAnimDir] = useState<"left" | "right">("left");
   const [animating, setAnimating] = useState(false);
 
   const touchStartX = useRef<number | null>(null);
@@ -422,10 +421,21 @@ function FeaturedCourses() {
     return () => { cancelled = true; };
   }, []);
 
+  // Preload ALL course images into the browser cache as soon as they arrive.
+  // This means every slide transition serves from memory — no re-fetching.
+  useEffect(() => {
+    if (!courses.length) return;
+    courses.forEach((c) => {
+      if (c.thumbnailUrl) {
+        const img = new Image();
+        img.src = c.thumbnailUrl;
+      }
+    });
+  }, [courses]);
+
   // Animated slide transition
-  const goTo = useCallback((next: number, dir: "left" | "right") => {
+  const goTo = useCallback((next: number, _dir?: "left" | "right") => {
     if (animating) return;
-    setAnimDir(dir);
     setAnimating(true);
     setTimeout(() => {
       setCurrent(next);
@@ -460,12 +470,6 @@ function FeaturedCourses() {
     touchStartX.current = null;
   };
 
-  // Slice 2 courses for this slide, pad if last slide has only 1
-  const startIdx = current * perView;
-  const visibleCourses = courses.slice(startIdx, startIdx + perView);
-  const padded: (Course | null)[] = [...visibleCourses];
-  while (padded.length < perView) padded.push(null);
-
   return (
     <section
       id="courses"
@@ -491,51 +495,59 @@ function FeaturedCourses() {
 
         {(loading || courses.length > 0) && (
           <div className="relative">
-            {/* Hidden preload — fetch next slide's images before they appear */}
-            {!loading && courses.length > perView && (() => {
-              const nextSlide = (current + 1) % totalSlides;
-              const nextStart = nextSlide * perView;
-              return courses.slice(nextStart, nextStart + perView).map((c) =>
-                c.thumbnailUrl ? (
-                  <img
-                    key={`preload-${c.courseUrl}`}
-                    src={c.thumbnailUrl}
-                    alt=""
-                    aria-hidden="true"
-                    className="absolute w-0 h-0 opacity-0 pointer-events-none"
-                    fetchPriority="low"
-                  />
-                ) : null
-              );
-            })()}
-
-            {/* Slide window */}
+            {/* Slide window — uses translateX so <img> nodes stay mounted and
+                the browser serves images from memory cache on every slide change. */}
             <div
               className="overflow-hidden"
               onTouchStart={onTouchStart}
               onTouchEnd={onTouchEnd}
             >
-              {/* key swap triggers the CSS animation */}
-              <div
-                key={current}
-                className="grid gap-5"
-                style={{
-                  gridTemplateColumns: `repeat(${perView}, minmax(0, 1fr))`,
-                  animation: animating
-                    ? `${animDir === "left" ? "slideInFromRight" : "slideInFromLeft"} 350ms cubic-bezier(0.4,0,0.2,1) both`
-                    : "none",
-                }}
-              >
-                {loading
-                  ? Array.from({ length: perView }).map((_, i) => <CourseSkeleton key={i} />)
-                  : padded.map((c, i) =>
-                      c ? (
-                        <CourseCard key={c.courseUrl || i} course={c} />
-                      ) : (
-                        <div key={`empty-${i}`} className="invisible" aria-hidden="true" />
-                      )
-                    )}
-              </div>
+              {loading ? (
+                <div
+                  className="grid gap-5"
+                  style={{ gridTemplateColumns: `repeat(${perView}, minmax(0, 1fr))` }}
+                >
+                  {Array.from({ length: perView }).map((_, i) => <CourseSkeleton key={i} />)}
+                </div>
+              ) : (
+                /* All slides rendered side-by-side; CSS translate shows only the active one */
+                <div
+                  style={{
+                    display: "flex",
+                    width: `${totalSlides * 100}%`,
+                    transform: `translateX(-${(current * 100) / totalSlides}%)`,
+                    transition: animating
+                      ? "transform 350ms cubic-bezier(0.4,0,0.2,1)"
+                      : "none",
+                  }}
+                >
+                  {Array.from({ length: totalSlides }).map((_, slideIdx) => {
+                    const start = slideIdx * perView;
+                    const slideCourses = courses.slice(start, start + perView);
+                    const paddedSlide: (Course | null)[] = [...slideCourses];
+                    while (paddedSlide.length < perView) paddedSlide.push(null);
+                    return (
+                      <div
+                        key={slideIdx}
+                        style={{ width: `${100 / totalSlides}%`, flexShrink: 0 }}
+                      >
+                        <div
+                          className="grid gap-5"
+                          style={{ gridTemplateColumns: `repeat(${perView}, minmax(0, 1fr))` }}
+                        >
+                          {paddedSlide.map((c, i) =>
+                            c ? (
+                              <CourseCard key={c.courseUrl || `${slideIdx}-${i}`} course={c} />
+                            ) : (
+                              <div key={`empty-${slideIdx}-${i}`} className="invisible" aria-hidden="true" />
+                            )
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Controls */}
@@ -594,14 +606,6 @@ function FeaturedCourses() {
             )}
 
             <style>{`
-              @keyframes slideInFromRight {
-                from { opacity: 0; transform: translateX(48px); }
-                to   { opacity: 1; transform: translateX(0); }
-              }
-              @keyframes slideInFromLeft {
-                from { opacity: 0; transform: translateX(-48px); }
-                to   { opacity: 1; transform: translateX(0); }
-              }
               @keyframes slideProgress {
                 from { width: 0%; }
                 to   { width: 100%; }
