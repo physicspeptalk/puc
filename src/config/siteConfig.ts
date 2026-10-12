@@ -62,7 +62,7 @@ export const youtubeChannels: YouTubeChannel[] = [
     handle: "physicspeptalk",
     url: "https://www.youtube.com/@physicspeptalk",
     description:
-      "Physics lessons, PUC board exam preparation, concept explanations, and educational resources for students preparing for board exams and competitive entrances.",
+      "Physics, Chemistry & Mathematics lessons, PUC board exam preparation and KCET, concept explanations, and educational resources for students preparing for board exams and competitive entrances.",
   },
   {
     id: "peptalkinfokcet",
@@ -70,7 +70,7 @@ export const youtubeChannels: YouTubeChannel[] = [
     handle: "peptalkinfokcet",
     url: "https://www.youtube.com/@peptalkinfokcet",
     description:
-      "KCET and CET exam guidance, counselling information, college selection tips, and resources for Karnataka engineering admission.",
+      "KCET and COMEDK exam guidance, counselling insights, college selection tips, and tried-and-tested strategies to help you secure a better engineering college in Karnataka.",
   },
 ];
 
@@ -93,18 +93,18 @@ export const categoryBlocks: CategoryBlock[] = [
     title: "PUC / Board Courses",
     subtitle: "First & Second PUC",
     description:
-      "Comprehensive first and second PUC board exam preparation. Structured Physics lessons and revision materials aligned to the Karnataka syllabus.",
+      "Comprehensive PUC board exam preparation. Structured PCM lessons and revision materials aligned to the Karnataka syllabus.",
     ctaLabel: "Explore Board Courses",
     ctaUrl: "https://physicspeptalk.com",
   },
   {
     id: "cet-comedk",
     emoji: "🏆",
-    title: "CET / COMEDK",
+    title: "KCET / COMEDK",
     subtitle: "Competitive Entrance Preparation",
     description:
       "Targeted preparation for KCET and COMEDK entrance exams. Physics, Chemistry, and Mathematics with exam-focused practice and strategy.",
-    ctaLabel: "Explore CET / COMEDK Courses",
+    ctaLabel: "Explore KCET / COMEDK Courses",
     ctaUrl: "https://physicspeptalk.com",
   },
   {

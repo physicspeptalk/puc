@@ -27,6 +27,7 @@ import {
 } from "./utils/analytics";
 import { fetchCourses, type Course } from "./services/courseService";
 import { fetchPucTestimonials, type PucTestimonial } from "./services/testimonialService";
+import { fetchResourceLinks, type ResourceLinks } from "./services/resourcesService";
 import {
   BlogsDropdownDesktop,
   BlogsAccordionMobile,
@@ -244,7 +245,7 @@ function Hero() {
           <div className="inline-flex items-center gap-2 bg-primary-50 border border-primary-100 rounded-full px-4 py-1.5 mb-8">
             <span className="w-2 h-2 rounded-full bg-accent-500" aria-hidden="true" />
             <span className="text-primary-700 text-sm font-semibold">
-              Physics Pep Talk · PUC &amp; Board Preparation
+              Physics Pep Talk · KCET &amp; Board Preparation
             </span>
           </div>
 
@@ -262,8 +263,8 @@ function Hero() {
           </h1>
 
           <p className="text-lg md:text-xl text-surface-600 leading-relaxed mb-10 max-w-2xl">
-            Explore Physics Pep Talk's PUC board exam preparation courses, Physics learning content,
-            educational YouTube channels, and student guidance — all in one place.
+            Explore Physics Pep Talk's KCET &amp; PUC board exam preparation courses, PCM learning content,
+            educational YouTube channels, and counselling guidance for KCET &amp; COMEDK — all in one place.
           </p>
 
           {/* CTA row */}
@@ -303,7 +304,7 @@ function Hero() {
             {[
               { label: "PUC & CET", sub: "Board & Entrance Prep" },
               { label: "2 Channels", sub: "Free YouTube Content" },
-              { label: "Physics Focus", sub: "Expert Subject Content" },
+              { label: "PCM", sub: "Physics, Chemistry & Maths" },
             ].map((item) => (
               <div key={item.label} className="flex flex-col gap-0.5">
                 <span className="text-xl font-bold text-primary-700">{item.label}</span>
@@ -624,6 +625,21 @@ function CategoryBlocks() {
     { bg: "bg-emerald-50", border: "border-emerald-100", btn: "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-100" },
   ];
 
+  // Fetch dynamic links from the resources sheet
+  const [links, setLinks] = useState<ResourceLinks | null>(null);
+  useEffect(() => {
+    fetchResourceLinks().then(setLinks);
+  }, []);
+
+  // Map each block id to the fetched URL (fall back to the static ctaUrl while loading)
+  function resolveUrl(block: typeof categoryBlocks[number]): string {
+    if (!links) return block.ctaUrl;
+    if (block.id === "puc-board") return links.boardsCourses;
+    if (block.id === "cet-comedk") return links.kcetComedkCourses;
+    if (block.id === "counselling") return links.counsellingEnrollment;
+    return block.ctaUrl;
+  }
+
   return (
     <section className="section-pad bg-white" aria-label="Course categories">
       <div className="container-pad">
@@ -640,6 +656,7 @@ function CategoryBlocks() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {categoryBlocks.map((block, idx) => {
             const c = colors[idx % colors.length];
+            const href = resolveUrl(block);
             return (
               <div
                 key={block.id}
@@ -652,7 +669,7 @@ function CategoryBlocks() {
                   <p className="text-surface-600 text-sm leading-relaxed mt-1">{block.description}</p>
                 </div>
                 <a
-                  href={block.ctaUrl}
+                  href={href}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => trackCTAClick(`category_${block.id}`)}
@@ -785,7 +802,7 @@ function YouTubeSection() {
             Official YouTube Channels
           </h2>
           <p className="text-surface-500 text-lg max-w-xl mx-auto">
-            Subscribe for free Physics lessons, board exam prep, and KCET/CET guidance videos.
+            Subscribe for free Physics lessons, board exam prep, and KCET/COMEDK guidance videos.
           </p>
         </div>
 
