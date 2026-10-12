@@ -41,14 +41,14 @@ function formatDate(raw: string): string {
 
 function PostCard({ post }: { post: BlogPost }) {
   return (
-    <article className="group bg-white rounded-2xl border border-surface-100 shadow-card hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+    <article className="group bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 shadow-card hover:shadow-md transition-shadow overflow-hidden flex flex-col">
       {/* Cover image */}
       {post.coverImage && (
         <a
           href={buildBlogArticleUrl(post.slug)}
           aria-hidden="true"
           tabIndex={-1}
-          className="block aspect-video overflow-hidden bg-surface-50"
+          className="block aspect-video overflow-hidden bg-surface-50 dark:bg-surface-900"
         >
           <img
             src={post.coverImage}
@@ -66,7 +66,7 @@ function PostCard({ post }: { post: BlogPost }) {
             {post.tags.slice(0, 3).map((tag) => (
               <span
                 key={tag}
-                className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary-50 text-primary-600 capitalize"
+                className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400 capitalize"
               >
                 {tag}
               </span>
@@ -75,7 +75,7 @@ function PostCard({ post }: { post: BlogPost }) {
         )}
 
         {/* Title */}
-        <h2 className="text-lg font-bold text-surface-900 leading-snug mb-2 group-hover:text-primary-700 transition-colors">
+        <h2 className="text-lg font-bold text-surface-900 dark:text-white leading-snug mb-2 group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors">
           <a
             href={buildBlogArticleUrl(post.slug)}
             className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded"
@@ -86,14 +86,14 @@ function PostCard({ post }: { post: BlogPost }) {
 
         {/* Excerpt */}
         {post.excerpt && (
-          <p className="text-sm text-surface-600 leading-relaxed mb-4 flex-1 line-clamp-3">
+          <p className="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-4 flex-1 line-clamp-3">
             {post.excerpt}
           </p>
         )}
 
         {/* Meta */}
-        <div className="flex items-center gap-2 mt-auto pt-4 border-t border-surface-100 text-xs text-surface-400">
-          <span className="font-medium text-surface-500">{post.author}</span>
+        <div className="flex items-center gap-2 mt-auto pt-4 border-t border-surface-100 dark:border-surface-700 text-xs text-surface-400 dark:text-surface-500">
+          <span className="font-medium text-surface-500 dark:text-surface-400">{post.author}</span>
           {post.date && (
             <>
               <span aria-hidden="true">·</span>
@@ -110,21 +110,49 @@ function PostCard({ post }: { post: BlogPost }) {
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-2xl border border-surface-100 overflow-hidden animate-pulse">
-      <div className="aspect-video bg-surface-100" />
+    <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 overflow-hidden animate-pulse">
+      <div className="aspect-video bg-surface-100 dark:bg-surface-700" />
       <div className="p-6 space-y-3">
-        <div className="h-3 bg-surface-100 rounded w-1/4" />
-        <div className="h-5 bg-surface-100 rounded w-3/4" />
-        <div className="h-3 bg-surface-100 rounded w-full" />
-        <div className="h-3 bg-surface-100 rounded w-5/6" />
+        <div className="h-3 bg-surface-100 dark:bg-surface-700 rounded w-1/4" />
+        <div className="h-5 bg-surface-100 dark:bg-surface-700 rounded w-3/4" />
+        <div className="h-3 bg-surface-100 dark:bg-surface-700 rounded w-full" />
+        <div className="h-3 bg-surface-100 dark:bg-surface-700 rounded w-5/6" />
       </div>
     </div>
   );
 }
 
+// ─── Dark mode toggle button ──────────────────────────────────────────────────
+
+function DarkToggle({ dark, onToggle }: { dark: boolean; onToggle: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+      className="w-9 h-9 rounded-lg flex items-center justify-center text-surface-500 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+    >
+      {dark ? (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+        </svg>
+      ) : (
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+      )}
+    </button>
+  );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-export default function BlogListingPage() {
+interface BlogListingPageProps {
+  dark: boolean;
+  onToggleDark: () => void;
+}
+
+export default function BlogListingPage({ dark, onToggleDark }: BlogListingPageProps) {
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -143,35 +171,27 @@ export default function BlogListingPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-surface-50">
+    <div className="min-h-screen bg-surface-50 dark:bg-surface-900">
       {/* Page header */}
-      <div className="bg-white border-b border-surface-100">
+      <div className="bg-white dark:bg-surface-900 border-b border-surface-100 dark:border-surface-800">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 md:py-20">
-          <a
-            href="/"
-            className="inline-flex items-center gap-1.5 text-sm text-surface-500 hover:text-primary-600 transition-colors mb-6"
-            aria-label="Back to home"
-          >
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
+          <div className="flex items-center justify-between mb-6">
+            <a
+              href="/"
+              className="inline-flex items-center gap-1.5 text-sm text-surface-500 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              aria-label="Back to home"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-            Home
-          </a>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-surface-900 tracking-tight mb-3">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              Home
+            </a>
+            <DarkToggle dark={dark} onToggle={onToggleDark} />
+          </div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-surface-900 dark:text-white tracking-tight mb-3">
             Blog
           </h1>
-          <p className="text-lg text-surface-500">
+          <p className="text-lg text-surface-500 dark:text-surface-400">
             Physics tips, exam strategies, and PUC guidance.
           </p>
         </div>
@@ -186,7 +206,7 @@ export default function BlogListingPage() {
         {error && !loading && (
           <div
             role="alert"
-            className="mb-8 p-4 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm"
+            className="mb-8 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900 text-red-700 dark:text-red-400 text-sm"
           >
             Could not load blog posts. Please check your connection and try
             again.
@@ -204,7 +224,7 @@ export default function BlogListingPage() {
 
         {/* Empty state */}
         {!loading && !error && posts.length === 0 && (
-          <div className="text-center py-20 text-surface-400">
+          <div className="text-center py-20 text-surface-400 dark:text-surface-500">
             <svg
               className="w-12 h-12 mx-auto mb-4 opacity-30"
               fill="none"

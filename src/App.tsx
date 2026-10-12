@@ -78,7 +78,7 @@ function ExternalIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
 // HEADER
 // ─────────────────────────────────────────────────────────────────────────────
 
-function Header() {
+function Header({ dark, onToggleDark }: { dark: boolean; onToggleDark: () => void }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -94,7 +94,7 @@ function Header() {
     <header
       className={`fixed top-0 inset-x-0 z-50 transition-all duration-200 ${
         scrolled
-          ? "bg-white/95 backdrop-blur-md shadow-[0_1px_0_0_rgba(0,0,0,0.06)]"
+          ? "bg-white/95 dark:bg-surface-900/95 backdrop-blur-md shadow-[0_1px_0_0_rgba(0,0,0,0.06)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.06)]"
           : "bg-transparent"
       }`}
       role="banner"
@@ -113,10 +113,10 @@ function Header() {
             width="40" height="40"
           />
           <div className="leading-tight">
-            <p className="font-bold text-surface-900 text-[15px] md:text-base leading-none">
+            <p className="font-bold text-surface-900 dark:text-white text-[15px] md:text-base leading-none">
               {siteConfig.brandName}
             </p>
-            <p className="text-surface-400 text-[11px] font-medium mt-0.5">{siteConfig.tagline}</p>
+            <p className="text-surface-400 dark:text-surface-500 text-[11px] font-medium mt-0.5">{siteConfig.tagline}</p>
           </div>
         </a>
 
@@ -129,7 +129,7 @@ function Header() {
                 key={link.href}
                 href={link.href}
                 {...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                className="px-3 py-1.5 rounded-lg text-sm font-medium text-surface-600 hover:text-primary-700 hover:bg-primary-50 transition-colors flex items-center gap-1"
+                className="px-3 py-1.5 rounded-lg text-sm font-medium text-surface-600 dark:text-surface-300 hover:text-primary-700 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-950 transition-colors flex items-center gap-1"
               >
                 {link.label}
                 {isExternal && <ExternalIcon className="w-3 h-3 opacity-50" />}
@@ -139,8 +139,27 @@ function Header() {
           <BlogsDropdownDesktop />
         </nav>
 
-        {/* Desktop CTA */}
+        {/* Desktop CTA + dark mode toggle */}
         <div className="hidden md:flex items-center gap-3">
+          {/* Dark mode toggle */}
+          <button
+            type="button"
+            onClick={onToggleDark}
+            aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+            className="w-9 h-9 rounded-lg flex items-center justify-center text-surface-500 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+          >
+            {dark ? (
+              /* Sun icon */
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+              </svg>
+            ) : (
+              /* Moon icon */
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            )}
+          </button>
           <a
             href={buildPhoneUrl()}
             onClick={() => trackCallClick("header")}
@@ -154,31 +173,49 @@ function Header() {
         </div>
 
         {/* Mobile hamburger */}
-        <button
-          type="button"
-          onClick={() => setMenuOpen((v) => !v)}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-          aria-expanded={menuOpen}
-          aria-controls="mobile-nav"
-          className="md:hidden p-2 rounded-lg text-surface-700 hover:bg-surface-100 transition-colors"
-        >
-          {menuOpen ? (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          ) : (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          )}
-        </button>
+        <div className="md:hidden flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onToggleDark}
+            aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+            className="p-2 rounded-lg text-surface-500 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+          >
+            {dark ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav"
+            className="p-2 rounded-lg text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+          >
+            {menuOpen ? (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Mobile drawer */}
       {menuOpen && (
         <div
           id="mobile-nav"
-          className="md:hidden bg-white border-t border-surface-100 shadow-lg"
+          className="md:hidden bg-white dark:bg-surface-900 border-t border-surface-100 dark:border-surface-800 shadow-lg"
         >
           <nav className="flex flex-col px-4 py-3 gap-0.5" aria-label="Mobile navigation">
             {navLinks.map((link) => {
@@ -189,7 +226,7 @@ function Header() {
                   href={link.href}
                   {...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                   onClick={close}
-                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-surface-700 hover:text-primary-700 hover:bg-primary-50 transition-colors"
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-surface-700 dark:text-surface-300 hover:text-primary-700 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-950 transition-colors"
                 >
                   {link.label}
                   {isExternal && <ExternalIcon className="w-3 h-3 opacity-40" />}
@@ -224,7 +261,7 @@ function Hero() {
   return (
     <section
       id="home"
-      className="relative overflow-hidden bg-surface-50 pt-24 md:pt-32 pb-20 md:pb-28"
+      className="relative overflow-hidden bg-surface-50 dark:bg-surface-900 pt-24 md:pt-32 pb-20 md:pb-28"
       aria-label="Hero"
     >
       {/* Decorative blobs */}
@@ -242,18 +279,18 @@ function Hero() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="max-w-3xl">
           {/* Pill badge */}
-          <div className="inline-flex items-center gap-2 bg-primary-50 border border-primary-100 rounded-full px-4 py-1.5 mb-8">
+          <div className="inline-flex items-center gap-2 bg-primary-50 dark:bg-primary-950 border border-primary-100 dark:border-primary-800 rounded-full px-4 py-1.5 mb-8">
             <span className="w-2 h-2 rounded-full bg-accent-500" aria-hidden="true" />
-            <span className="text-primary-700 text-sm font-semibold">
+            <span className="text-primary-700 dark:text-primary-300 text-sm font-semibold">
               Physics Pep Talk · KCET &amp; Board Preparation
             </span>
           </div>
 
           {/* H1 */}
-          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-surface-900 leading-[1.1] tracking-tight mb-6 text-balance">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-surface-900 dark:text-white leading-[1.1] tracking-tight mb-6 text-balance">
             Your Path to{" "}
             <span className="relative">
-              <span className="relative z-10 text-primary-600">Academic</span>
+              <span className="relative z-10 text-primary-600 dark:text-primary-400">Academic</span>
               <span
                 className="absolute -bottom-1 left-0 right-0 h-3 bg-accent-300/40 -z-0 rounded"
                 aria-hidden="true"
@@ -262,7 +299,7 @@ function Hero() {
             Excellence
           </h1>
 
-          <p className="text-lg md:text-xl text-surface-600 leading-relaxed mb-10 max-w-2xl">
+          <p className="text-lg md:text-xl text-surface-600 dark:text-surface-400 leading-relaxed mb-10 max-w-2xl">
             Explore Physics Pep Talk's KCET &amp; PUC board exam preparation courses, PCM learning content,
             educational YouTube channels, and counselling guidance for KCET &amp; COMEDK — all in one place.
           </p>
@@ -272,7 +309,7 @@ function Hero() {
             <a
               href="#courses"
               onClick={() => trackCTAClick("hero_courses")}
-              className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white font-bold px-6 py-3.5 rounded-xl text-base transition-colors shadow-md shadow-primary-200"
+              className="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 active:bg-primary-800 text-white font-bold px-6 py-3.5 rounded-xl text-base transition-colors shadow-md shadow-primary-200 dark:shadow-none"
             >
               Explore Courses
               <ArrowRight />
@@ -280,7 +317,7 @@ function Hero() {
             <a
               href="#youtube"
               onClick={() => trackCTAClick("hero_youtube")}
-              className="inline-flex items-center gap-2 bg-white hover:bg-surface-50 border border-surface-200 text-surface-800 font-semibold px-6 py-3.5 rounded-xl text-base transition-colors shadow-card"
+              className="inline-flex items-center gap-2 bg-white dark:bg-surface-800 hover:bg-surface-50 dark:hover:bg-surface-700 border border-surface-200 dark:border-surface-700 text-surface-800 dark:text-surface-100 font-semibold px-6 py-3.5 rounded-xl text-base transition-colors shadow-card"
             >
               <svg className="w-5 h-5 text-red-500 fill-current" viewBox="0 0 24 24" aria-hidden="true">
                 <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
@@ -292,7 +329,7 @@ function Hero() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackWhatsAppClick("hero")}
-              className="inline-flex items-center gap-2 bg-accent-500 hover:bg-accent-600 text-white font-semibold px-6 py-3.5 rounded-xl text-base transition-colors shadow-md shadow-accent-200"
+              className="inline-flex items-center gap-2 bg-accent-500 hover:bg-accent-600 text-white font-semibold px-6 py-3.5 rounded-xl text-base transition-colors shadow-md shadow-accent-200 dark:shadow-none"
             >
               <WaIcon />
               WhatsApp Us
@@ -300,15 +337,15 @@ function Hero() {
           </div>
 
           {/* Trust strip */}
-          <div className="flex flex-wrap gap-6 mt-12 pt-10 border-t border-surface-200">
+          <div className="flex flex-wrap gap-6 mt-12 pt-10 border-t border-surface-200 dark:border-surface-700">
             {[
               { label: "PUC & KCET", sub: "Board & Entrance Prep" },
               { label: "2 Channels", sub: "Free YouTube Content" },
               { label: "PCM", sub: "Physics, Chemistry & Maths" },
             ].map((item) => (
               <div key={item.label} className="flex flex-col gap-0.5">
-                <span className="text-xl font-bold text-primary-700">{item.label}</span>
-                <span className="text-sm text-surface-500">{item.sub}</span>
+                <span className="text-xl font-bold text-primary-700 dark:text-primary-400">{item.label}</span>
+                <span className="text-sm text-surface-500 dark:text-surface-500">{item.sub}</span>
               </div>
             ))}
           </div>
@@ -327,8 +364,8 @@ function Hero() {
 function CourseCard({ course }: { course: Course }) {
   const [imgErr, setImgErr] = useState(false);
   return (
-    <article className="flex flex-col bg-white rounded-2xl border border-surface-100 shadow-card-lg h-full">
-      <div className="aspect-video rounded-t-2xl overflow-hidden bg-primary-50 flex-shrink-0">
+    <article className="flex flex-col bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 shadow-card h-full">
+      <div className="aspect-video rounded-t-2xl overflow-hidden bg-primary-50 dark:bg-primary-950 flex-shrink-0">
         {course.thumbnailUrl && !imgErr ? (
           <img
             src={course.thumbnailUrl}
@@ -347,7 +384,7 @@ function CourseCard({ course }: { course: Course }) {
         )}
       </div>
       <div className="flex flex-col flex-1 p-5 gap-4">
-        <p className="text-sm text-surface-600 leading-relaxed flex-1 line-clamp-3">
+        <p className="text-sm text-surface-600 dark:text-surface-400 leading-relaxed flex-1 line-clamp-3">
           {course.description || "Physics Pep Talk course."}
         </p>
         {course.courseUrl ? (
@@ -362,7 +399,7 @@ function CourseCard({ course }: { course: Course }) {
             <ExternalIcon />
           </a>
         ) : (
-          <span className="inline-flex items-center justify-center bg-surface-100 text-surface-400 text-sm px-4 py-2.5 rounded-xl select-none">
+          <span className="inline-flex items-center justify-center bg-surface-100 dark:bg-surface-700 text-surface-400 text-sm px-4 py-2.5 rounded-xl select-none">
             Link Coming Soon
           </span>
         )}
@@ -373,12 +410,12 @@ function CourseCard({ course }: { course: Course }) {
 
 function CourseSkeleton() {
   return (
-    <div className="flex flex-col rounded-2xl border border-surface-100 bg-white animate-pulse">
-      <div className="aspect-video rounded-t-2xl bg-surface-100" />
+    <div className="flex flex-col rounded-2xl border border-surface-100 dark:border-surface-700 bg-white dark:bg-surface-800 animate-pulse">
+      <div className="aspect-video rounded-t-2xl bg-surface-100 dark:bg-surface-700" />
       <div className="p-5 flex flex-col gap-3">
-        <div className="h-3 bg-surface-100 rounded w-full" />
-        <div className="h-3 bg-surface-100 rounded w-4/5" />
-        <div className="h-10 bg-surface-100 rounded-xl mt-2" />
+        <div className="h-3 bg-surface-100 dark:bg-surface-700 rounded w-full" />
+        <div className="h-3 bg-surface-100 dark:bg-surface-700 rounded w-4/5" />
+        <div className="h-10 bg-surface-100 dark:bg-surface-700 rounded-xl mt-2" />
       </div>
     </div>
   );
@@ -473,13 +510,13 @@ function FeaturedCourses() {
   return (
     <section
       id="courses"
-      className="section-pad bg-surface-50"
+      className="section-pad bg-surface-50 dark:bg-surface-800"
       aria-label="Featured courses"
     >
       <div className="container-pad">
         <div className="text-center mb-12">
           <SectionLabel>Our Courses</SectionLabel>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-surface-900 tracking-tight mb-4">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-surface-900 dark:text-white tracking-tight mb-4">
             Featured Courses
           </h2>
         </div>
@@ -561,7 +598,7 @@ function FeaturedCourses() {
                   type="button"
                   onClick={goPrev}
                   aria-label="Previous"
-                  className="w-9 h-9 rounded-full border border-surface-200 bg-white shadow-card flex items-center justify-center text-surface-500 hover:border-primary-300 hover:text-primary-600 transition-colors"
+                  className="w-9 h-9 rounded-full border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 shadow-card flex items-center justify-center text-surface-500 dark:text-surface-400 hover:border-primary-300 dark:hover:border-primary-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -578,7 +615,7 @@ function FeaturedCourses() {
                       aria-label={`Slide ${i + 1}`}
                       aria-current={i === current}
                       className={`relative h-2 rounded-full overflow-hidden transition-all duration-300 ${
-                        i === current ? "w-8 bg-surface-200" : "w-2 bg-surface-300 hover:bg-surface-400"
+                        i === current ? "w-8 bg-surface-200 dark:bg-surface-700" : "w-2 bg-surface-300 dark:bg-surface-600 hover:bg-surface-400 dark:hover:bg-surface-500"
                       }`}
                     >
                       {i === current && (
@@ -600,7 +637,7 @@ function FeaturedCourses() {
                   type="button"
                   onClick={goNext}
                   aria-label="Next"
-                  className="w-9 h-9 rounded-full border border-surface-200 bg-white shadow-card flex items-center justify-center text-surface-500 hover:border-primary-300 hover:text-primary-600 transition-colors"
+                  className="w-9 h-9 rounded-full border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 shadow-card flex items-center justify-center text-surface-500 dark:text-surface-400 hover:border-primary-300 dark:hover:border-primary-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -628,9 +665,9 @@ function FeaturedCourses() {
 
 function CategoryBlocks() {
   const colors = [
-    { bg: "bg-primary-50", border: "border-primary-100", btn: "bg-primary-600 hover:bg-primary-700 text-white shadow-md shadow-primary-100" },
-    { bg: "bg-accent-50", border: "border-accent-100", btn: "bg-accent-500 hover:bg-accent-600 text-white shadow-md shadow-accent-100" },
-    { bg: "bg-emerald-50", border: "border-emerald-100", btn: "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-100" },
+    { bg: "bg-primary-50 dark:bg-primary-950", border: "border-primary-100 dark:border-primary-800", btn: "bg-primary-600 hover:bg-primary-700 text-white shadow-md shadow-primary-100 dark:shadow-none" },
+    { bg: "bg-accent-50 dark:bg-accent-900/30", border: "border-accent-100 dark:border-accent-800", btn: "bg-accent-500 hover:bg-accent-600 text-white shadow-md shadow-accent-100 dark:shadow-none" },
+    { bg: "bg-emerald-50 dark:bg-emerald-950/40", border: "border-emerald-100 dark:border-emerald-800", btn: "bg-emerald-600 hover:bg-emerald-700 text-white shadow-md shadow-emerald-100 dark:shadow-none" },
   ];
 
   // Fetch dynamic links from the resources sheet
@@ -649,14 +686,14 @@ function CategoryBlocks() {
   }
 
   return (
-    <section className="section-pad bg-white" aria-label="Course categories">
+    <section className="section-pad bg-white dark:bg-surface-900" aria-label="Course categories">
       <div className="container-pad">
         <div className="text-center mb-12">
           <SectionLabel>Explore by Category</SectionLabel>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-surface-900 tracking-tight mb-4">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-surface-900 dark:text-white tracking-tight mb-4">
             Find the Right Resource
           </h2>
-          <p className="text-surface-500 text-lg max-w-xl mx-auto">
+          <p className="text-surface-500 dark:text-surface-400 text-lg max-w-xl mx-auto">
             Board exam prep, competitive entrances, or personalised counselling — choose what fits your goal.
           </p>
         </div>
@@ -672,9 +709,9 @@ function CategoryBlocks() {
               >
                 <span className="text-4xl" role="img" aria-label={block.title}>{block.emoji}</span>
                 <div className="flex flex-col gap-1 flex-1">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-surface-400">{block.subtitle}</p>
-                  <h3 className="text-xl font-bold text-surface-900">{block.title}</h3>
-                  <p className="text-surface-600 text-sm leading-relaxed mt-1">{block.description}</p>
+                  <p className="text-xs font-semibold uppercase tracking-widest text-surface-400 dark:text-surface-500">{block.subtitle}</p>
+                  <h3 className="text-xl font-bold text-surface-900 dark:text-white">{block.title}</h3>
+                  <p className="text-surface-600 dark:text-surface-300 text-sm leading-relaxed mt-1">{block.description}</p>
                 </div>
                 <a
                   href={href}
@@ -702,7 +739,7 @@ function CategoryBlocks() {
 function FeedbackCard({ t }: { t: PucTestimonial }) {
   const [playing, setPlaying] = useState(false);
   return (
-    <article className="flex flex-col rounded-2xl overflow-hidden border border-surface-100 shadow-card hover:shadow-card-md transition-shadow bg-white">
+    <article className="flex flex-col rounded-2xl overflow-hidden border border-surface-100 dark:border-surface-700 shadow-card hover:shadow-card-md transition-shadow bg-white dark:bg-surface-800">
       <div className="relative aspect-video bg-surface-900">
         {playing ? (
           <iframe
@@ -737,8 +774,8 @@ function FeedbackCard({ t }: { t: PucTestimonial }) {
         )}
       </div>
       {t.caption && (
-        <div className="px-4 py-3.5 border-t border-surface-50">
-          <p className="text-sm text-surface-700 leading-snug line-clamp-2">{t.caption}</p>
+        <div className="px-4 py-3.5 border-t border-surface-50 dark:border-surface-700">
+          <p className="text-sm text-surface-700 dark:text-surface-300 leading-snug line-clamp-2">{t.caption}</p>
         </div>
       )}
     </article>
@@ -747,9 +784,9 @@ function FeedbackCard({ t }: { t: PucTestimonial }) {
 
 function FeedbackSkeleton() {
   return (
-    <div className="rounded-2xl overflow-hidden border border-surface-100 bg-white animate-pulse">
-      <div className="aspect-video bg-surface-100" />
-      <div className="px-4 py-3.5"><div className="h-3 bg-surface-100 rounded w-3/4" /></div>
+    <div className="rounded-2xl overflow-hidden border border-surface-100 dark:border-surface-700 bg-white dark:bg-surface-800 animate-pulse">
+      <div className="aspect-video bg-surface-100 dark:bg-surface-700" />
+      <div className="px-4 py-3.5"><div className="h-3 bg-surface-100 dark:bg-surface-700 rounded w-3/4" /></div>
     </div>
   );
 }
@@ -770,14 +807,14 @@ function StudentFeedback() {
   if (!loading && items.length === 0 && !error) return null;
 
   return (
-    <section id="feedback" className="section-pad bg-surface-50" aria-label="Student feedback">
+    <section id="feedback" className="section-pad bg-surface-50 dark:bg-surface-900" aria-label="Student feedback">
       <div className="container-pad">
         <div className="text-center mb-12">
           <SectionLabel>Student Feedback</SectionLabel>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-surface-900 tracking-tight mb-4">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-surface-900 dark:text-white tracking-tight mb-4">
             What Our Students Say
           </h2>
-          <p className="text-surface-500 text-lg max-w-xl mx-auto">
+          <p className="text-surface-500 dark:text-surface-400 text-lg max-w-xl mx-auto">
             Hear from students and parents who have used Physics Pep Talk's courses and guidance.
           </p>
         </div>
@@ -802,14 +839,14 @@ function StudentFeedback() {
 
 function YouTubeSection() {
   return (
-    <section id="youtube" className="section-pad bg-white" aria-label="YouTube channels">
+    <section id="youtube" className="section-pad bg-white dark:bg-surface-900" aria-label="YouTube channels">
       <div className="container-pad">
         <div className="text-center mb-12">
           <SectionLabel>YouTube</SectionLabel>
-          <h2 className="text-3xl md:text-4xl font-extrabold text-surface-900 tracking-tight mb-4">
+          <h2 className="text-3xl md:text-4xl font-extrabold text-surface-900 dark:text-white tracking-tight mb-4">
             Official YouTube Channels
           </h2>
-          <p className="text-surface-500 text-lg max-w-xl mx-auto">
+          <p className="text-surface-500 dark:text-surface-400 text-lg max-w-xl mx-auto">
             Subscribe for free Physics lessons, board exam prep, and KCET/COMEDK guidance videos.
           </p>
         </div>
@@ -818,7 +855,7 @@ function YouTubeSection() {
           {youtubeChannels.map((ch) => (
             <div
               key={ch.id}
-              className="flex flex-col rounded-2xl bg-white border border-surface-100 shadow-card overflow-hidden"
+              className="flex flex-col rounded-2xl bg-white dark:bg-surface-800 border border-surface-100 dark:border-surface-700 shadow-card overflow-hidden"
             >
               {/* Red accent stripe */}
               <div className="h-1.5 bg-red-500" aria-hidden="true" />
@@ -832,12 +869,12 @@ function YouTubeSection() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-bold text-surface-900 text-base leading-tight">{ch.name}</h3>
-                    <p className="text-surface-400 text-sm mt-0.5">@{ch.handle}</p>
+                    <h3 className="font-bold text-surface-900 dark:text-white text-base leading-tight">{ch.name}</h3>
+                    <p className="text-surface-400 dark:text-surface-500 text-sm mt-0.5">@{ch.handle}</p>
                   </div>
                 </div>
 
-                <p className="text-surface-600 text-sm leading-relaxed flex-1">{ch.description}</p>
+                <p className="text-surface-600 dark:text-surface-300 text-sm leading-relaxed flex-1">{ch.description}</p>
 
                 <a
                   href={ch.url}
@@ -869,8 +906,8 @@ function Contact() {
     {
       key: "whatsapp",
       icon: <WaIcon className="w-5 h-5" />,
-      color: "bg-green-50 text-green-600 group-hover:bg-green-100",
-      border: "hover:border-green-200",
+      color: "bg-green-50 text-green-600 group-hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 dark:group-hover:bg-green-900/50",
+      border: "hover:border-green-200 dark:hover:border-green-700",
       title: "WhatsApp",
       sub: siteConfig.whatsappNumber ? `+${siteConfig.whatsappNumber}` : "Message us",
       href: buildWhatsAppUrl(),
@@ -885,8 +922,8 @@ function Contact() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
             </svg>
           ),
-          color: "bg-primary-50 text-primary-600 group-hover:bg-primary-100",
-          border: "hover:border-primary-200",
+          color: "bg-primary-50 text-primary-600 group-hover:bg-primary-100 dark:bg-primary-950 dark:text-primary-400 dark:group-hover:bg-primary-900",
+          border: "hover:border-primary-200 dark:hover:border-primary-700",
           title: "Call Us",
           sub: siteConfig.phoneNumber,
           href: buildPhoneUrl(),
@@ -902,8 +939,8 @@ function Contact() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           ),
-          color: "bg-primary-50 text-primary-600 group-hover:bg-primary-100",
-          border: "hover:border-primary-200",
+          color: "bg-primary-50 text-primary-600 group-hover:bg-primary-100 dark:bg-primary-950 dark:text-primary-400 dark:group-hover:bg-primary-900",
+          border: "hover:border-primary-200 dark:hover:border-primary-700",
           title: "Email",
           sub: siteConfig.email,
           href: `mailto:${siteConfig.email}`,
@@ -918,8 +955,8 @@ function Contact() {
           <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" />
         </svg>
       ),
-      color: "bg-pink-50 text-pink-600 group-hover:bg-pink-100",
-      border: "hover:border-pink-200",
+      color: "bg-pink-50 text-pink-600 group-hover:bg-pink-100 dark:bg-pink-950/40 dark:text-pink-400 dark:group-hover:bg-pink-950/60",
+      border: "hover:border-pink-200 dark:hover:border-pink-700",
       title: "Instagram",
       sub: "@physics_pep_talk",
       href: siteConfig.instagramUrl,
@@ -929,15 +966,15 @@ function Contact() {
   ];
 
   return (
-    <section id="contact" className="section-pad bg-white" aria-label="Contact">
+    <section id="contact" className="section-pad bg-white dark:bg-surface-800" aria-label="Contact">
       <div className="container-pad">
         <div className="max-w-2xl mx-auto">
           <div className="text-center mb-10">
             <SectionLabel>Contact</SectionLabel>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-surface-900 tracking-tight mb-4">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-surface-900 dark:text-white tracking-tight mb-4">
               Have Questions?
             </h2>
-            <p className="text-surface-500 text-lg">
+            <p className="text-surface-500 dark:text-surface-400 text-lg">
               Reach out about our courses, resources, or to get personalised guidance. We're happy to help.
             </p>
           </div>
@@ -949,16 +986,16 @@ function Contact() {
                 href={item.href}
                 {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                 onClick={item.onClick}
-                className={`group flex items-center gap-4 bg-white rounded-2xl border border-surface-100 p-5 shadow-card ${item.border} hover:shadow-card-md transition-all`}
+                className={`group flex items-center gap-4 bg-white dark:bg-surface-900 rounded-2xl border border-surface-100 dark:border-surface-700 p-5 shadow-card ${item.border} hover:shadow-card-md transition-all`}
               >
                 <span className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${item.color}`}>
                   {item.icon}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-surface-900 text-sm">{item.title}</p>
-                  <p className="text-surface-500 text-sm truncate">{item.sub}</p>
+                  <p className="font-semibold text-surface-900 dark:text-white text-sm">{item.title}</p>
+                  <p className="text-surface-500 dark:text-surface-400 text-sm truncate">{item.sub}</p>
                 </div>
-                <svg className="w-4 h-4 text-surface-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <svg className="w-4 h-4 text-surface-300 dark:text-surface-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </a>
@@ -1148,19 +1185,60 @@ function useRoute() {
 export default function App() {
   const route = useRoute();
 
+  // ── Dark mode ────────────────────────────────────────────────────────────
+  // Priority:
+  //   1. User's manual preference saved in localStorage ("theme" key)
+  //   2. OS / browser prefers-color-scheme media query
+  //   3. Default: dark (fallback if system preference cannot be read)
+  const [dark, setDark] = useState<boolean>(() => {
+    // 1. Respect a previously saved manual preference
+    const stored = localStorage.getItem("theme");
+    if (stored === "dark") return true;
+    if (stored === "light") return false;
+
+    // 2. Follow the system preference
+    try {
+      if (window.matchMedia("(prefers-color-scheme: light)").matches) return false;
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) return true;
+    } catch {
+      // matchMedia not available — fall through to default
+    }
+
+    // 3. Default to dark
+    return true;
+  });
+
+  useEffect(() => {
+    const html = document.documentElement;
+    if (dark) {
+      html.classList.add("dark");
+    } else {
+      html.classList.remove("dark");
+    }
+  }, [dark]);
+
+  // Manual toggle — saves the choice so it overrides system preference
+  const toggleDark = () => {
+    setDark((d) => {
+      const next = !d;
+      localStorage.setItem("theme", next ? "dark" : "light");
+      return next;
+    });
+  };
+
   // ── Blog listing page ─────────────────────────────────────────────────────
   if (route.page === "blog-listing") {
-    return <BlogListingPage />;
+    return <BlogListingPage dark={dark} onToggleDark={toggleDark} />;
   }
 
   // ── Blog article page ─────────────────────────────────────────────────────
   if (route.page === "blog-article" && route.slug) {
-    return <BlogArticlePage slug={route.slug} />;
+    return <BlogArticlePage slug={route.slug} dark={dark} onToggleDark={toggleDark} />;
   }
 
   // ── Home page (default) ───────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-surface-900">
       <a
         href="#main-content"
         className="absolute -top-10 left-4 z-[9999] bg-primary-600 text-white px-4 py-2 rounded-lg font-semibold text-sm focus:top-4 transition-all duration-150"
@@ -1168,7 +1246,7 @@ export default function App() {
         Skip to main content
       </a>
 
-      <Header />
+      <Header dark={dark} onToggleDark={toggleDark} />
 
       <main id="main-content">
         <Hero />
