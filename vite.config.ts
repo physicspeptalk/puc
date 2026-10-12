@@ -7,9 +7,7 @@ export default defineConfig({
   base: "/",
 
   server: {
-    allowedHosts: [
-      "kl2641e2kfr3.shares.zrok.io",
-    ],
+    allowedHosts: ["kl2641e2kfr3.shares.zrok.io"],
   },
 
   build: {
@@ -17,18 +15,8 @@ export default defineConfig({
     sourcemap: false,
     rollupOptions: {
       input: {
-        kcet: resolve(import.meta.dirname, "kcet/index.html"),
-        comedk: resolve(import.meta.dirname, "comedk/index.html"),
-        "kcet-college-predictor": resolve(
-          import.meta.dirname,
-          "kcet-college-predictor/index.html"
-        ),
-        "privacy-policy": resolve(import.meta.dirname, "privacy-policy.html"),
-        terms: resolve(import.meta.dirname, "terms.html"),
-        // Custom 404 — GitHub Pages serves this for any unresolved path
-        404: resolve(import.meta.dirname, "404.html"),
+        main: resolve(import.meta.dirname, "index.html"),
       },
-
       output: {
         assetFileNames: "assets/[name]-[hash][extname]",
         chunkFileNames: "assets/[name]-[hash].js",

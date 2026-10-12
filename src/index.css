@@ -2,64 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ============================================================
-   Base styles
-   ============================================================ */
 @layer base {
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-
   html {
     scroll-behavior: smooth;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    @apply font-sans text-gray-900 bg-white;
-    line-height: 1.6;
+    @apply bg-white text-surface-800 antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  /* Dark mode body */
-  .dark body {
-    @apply text-gray-100 bg-gray-900;
-  }
-
-  /* Improve focus visibility globally */
-  :focus-visible {
-    outline: 2px solid theme("colors.brand.600");
-    outline-offset: 2px;
-  }
-
-  /* Anchor reset */
-  a {
-    text-decoration: none;
-  }
-
-  /* Headings */
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-bold leading-tight;
-  }
-
-  /* Smooth scroll offset for fixed header (~64px) */
-  :target {
-    scroll-margin-top: 80px;
+  *:focus-visible {
+    @apply outline-none ring-2 ring-primary-500 ring-offset-2;
   }
 }
 
-/* ============================================================
-   Utilities
-   ============================================================ */
 @layer utilities {
-  /* iOS safe area bottom for mobile CTA bar */
-  .safe-bottom {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+  .section-pad {
+    @apply py-20 md:py-28;
   }
 
-  .h-safe-bottom {
-    height: env(safe-area-inset-bottom, 0px);
+  .container-pad {
+    @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .text-balance {
+    text-wrap: balance;
   }
 }

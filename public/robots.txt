@@ -1,5 +1,5 @@
-# robots.txt — https://counselling.physicspeptalk.com
-# Updated: 2026-10-07
+# robots.txt — https://puc.physicspeptalk.com
+# Updated: 2026-10-12
 
 # Allow all crawlers (default)
 User-agent: *
@@ -71,4 +71,4 @@ Allow: /llms.txt
 Allow: /llms-full.txt
 
 # ── Sitemap ──────────────────────────────────────────────────────────────────
-Sitemap: https://counselling.physicspeptalk.com/sitemap.xml
+Sitemap: https://puc.physicspeptalk.com/sitemap.xml
