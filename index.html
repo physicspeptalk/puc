@@ -144,6 +144,35 @@
     </script>
 
     <!-- ================================================
+         GitHub Pages SPA redirect receiver
+         Works with public/404.html to enable clean URLs like /blogs/my-post/
+         ================================================ -->
+    <script>
+      (function () {
+        // Decode the ?p= path injected by 404.html and restore the original URL
+        var l = window.location;
+        if (l.search.slice(1).split("&")[0].split("=")[0] === "p") {
+          var decoded = l.search
+            .slice(1)
+            .split("&")
+            .reduce(function (memo, item) {
+              var parts = item.split("=");
+              memo[parts[0]] = parts.slice(1).join("=").replace(/~and~/g, "&");
+              return memo;
+            }, {});
+          window.history.replaceState(
+            null,
+            null,
+            l.pathname.slice(0, -1) +
+              (decoded.p ? "/" + decoded.p.replace(/~/g, "/") : "") +
+              (decoded.q ? "?" + decoded.q : "") +
+              l.hash
+          );
+        }
+      })();
+    </script>
+
+    <!-- ================================================
          Google Analytics 4
          ================================================ -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-LSBBH9XZ5X"></script>
@@ -155,14 +184,6 @@
     </script>
   </head>
   <body>
-    <!-- Skip navigation link for keyboard / screen reader users -->
-    <a
-      href="#main-content"
-      class="absolute -top-10 left-4 z-[9999] bg-white text-brand-700 px-4 py-2 rounded shadow-lg font-semibold focus:top-4 transition-all duration-200"
-    >
-      Skip to main content
-    </a>
-
     <div id="root"></div>
 
     <script type="module" src="/src/main.tsx"></script>

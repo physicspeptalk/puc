@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Physics Pep Talk</title>
+    <!--
+      GitHub Pages 404 → SPA redirect trick.
+
+      When a visitor navigates directly to a clean URL like:
+        https://puc.physicspeptalk.com/blogs/my-post/
+
+      GitHub Pages cannot find that file and serves this 404.html.
+      This script converts the path + query + hash into a query parameter
+      and redirects to the root index.html, which then restores the original
+      URL via the companion script in index.html.
+
+      The path is encoded as a query string parameter "p" using a simple
+      substitution — slashes are replaced with ~ so query-string parsing
+      does not misinterpret them.
+
+      Credit: https://github.com/rafgraph/spa-github-pages
+    -->
+    <script>
+      (function () {
+        var segmentCount = 0; // set to 1 if the repo is hosted at /repo-name/
+        var l = window.location;
+        l.replace(
+          l.protocol +
+            "//" +
+            l.hostname +
+            (l.port ? ":" + l.port : "") +
+            l.pathname
+              .split("/")
+              .slice(0, 1 + segmentCount)
+              .join("/") +
+            "/?p=" +
+            l.pathname
+              .slice(1)
+              .split("/")
+              .slice(segmentCount)
+              .join("~") +
+            (l.search
+              ? "&q=" + l.search.slice(1).replace(/&/g, "~and~")
+              : "") +
+            l.hash
+        );
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

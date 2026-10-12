@@ -30,3 +30,32 @@
     text-wrap: balance;
   }
 }
+
+/* ─── Blogs dropdown panel animation ────────────────────────────────────────
+   Applied to the floating dropdown panel via the .blogs-dropdown-animate class.
+   Uses a subtle scale + fade-in from slightly above.
+   Respects prefers-reduced-motion by collapsing to a plain fade.
+─────────────────────────────────────────────────────────────────────────── */
+@keyframes blogs-dropdown-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@layer utilities {
+  .blogs-dropdown-animate {
+    transform-origin: top left;
+    animation: blogs-dropdown-enter 0.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .blogs-dropdown-animate {
+      animation: none;
+    }
+  }
+}

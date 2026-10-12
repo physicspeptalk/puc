@@ -27,6 +27,12 @@ import {
 } from "./utils/analytics";
 import { fetchCourses, type Course } from "./services/courseService";
 import { fetchPucTestimonials, type PucTestimonial } from "./services/testimonialService";
+import {
+  BlogsDropdownDesktop,
+  BlogsAccordionMobile,
+} from "./components/BlogsDropdown";
+import BlogListingPage from "./components/BlogListingPage";
+import BlogArticlePage from "./components/BlogArticlePage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REUSABLE PRIMITIVES
@@ -129,16 +135,7 @@ function Header() {
               </a>
             );
           })}
-          {siteConfig.blogUrl && (
-            <a
-              href={siteConfig.blogUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3 py-1.5 rounded-lg text-sm font-medium text-surface-600 hover:text-primary-700 hover:bg-primary-50 transition-colors flex items-center gap-1"
-            >
-              Blogs <ExternalIcon className="w-3 h-3 opacity-50" />
-            </a>
-          )}
+          <BlogsDropdownDesktop />
         </nav>
 
         {/* Desktop CTA */}
@@ -198,17 +195,7 @@ function Header() {
                 </a>
               );
             })}
-            {siteConfig.blogUrl && (
-              <a
-                href={siteConfig.blogUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={close}
-                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-surface-700 hover:text-primary-700 hover:bg-primary-50 transition-colors"
-              >
-                Blogs <ExternalIcon className="w-3 h-3 opacity-40" />
-              </a>
-            )}
+            <BlogsAccordionMobile onClose={close} />
             <div className="pt-3 pb-1">
               <a
                 href={buildPhoneUrl()}
@@ -1086,10 +1073,67 @@ function Footer() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SIMPLE PATH ROUTER
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Parse the current window.location.pathname into a route descriptor.
+ *
+ * Supported routes:
+ *   /                       → { page: "home" }
+ *   /blogs/                 → { page: "blog-listing" }
+ *   /blogs/<slug>/          → { page: "blog-article", slug }
+ *
+ * GitHub Pages 404 → index.html redirect means we always land at / with
+ * the real path already restored by the redirect-receiver script, so
+ * window.location.pathname is accurate by the time React mounts.
+ */
+function parseRoute(pathname: string): { page: "home" | "blog-listing" | "blog-article"; slug?: string } {
+  const path = pathname.replace(/\/+$/, "") || "/"; // normalise trailing slash
+
+  if (path === "/blogs" || pathname === "/blogs/") {
+    return { page: "blog-listing" };
+  }
+
+  const blogArticleMatch = pathname.match(/^\/blogs\/([^/]+)\/?$/);
+  if (blogArticleMatch) {
+    return { page: "blog-article", slug: blogArticleMatch[1] };
+  }
+
+  return { page: "home" };
+}
+
+function useRoute() {
+  const [route, setRoute] = useState(() => parseRoute(window.location.pathname));
+
+  useEffect(() => {
+    // Handle browser back/forward navigation
+    const handler = () => setRoute(parseRoute(window.location.pathname));
+    window.addEventListener("popstate", handler);
+    return () => window.removeEventListener("popstate", handler);
+  }, []);
+
+  return route;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ROOT
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function App() {
+  const route = useRoute();
+
+  // ── Blog listing page ─────────────────────────────────────────────────────
+  if (route.page === "blog-listing") {
+    return <BlogListingPage />;
+  }
+
+  // ── Blog article page ─────────────────────────────────────────────────────
+  if (route.page === "blog-article" && route.slug) {
+    return <BlogArticlePage slug={route.slug} />;
+  }
+
+  // ── Home page (default) ───────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-white">
       <a

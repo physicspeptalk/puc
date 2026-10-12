@@ -38,6 +38,15 @@ export const PUC_SHEET_BASE_URL =
 
 export const PUC_COURSES_GID = "0";
 export const PUC_FEEDBACK_GID = "1342071564";
+/**
+ * GID for the Blogs worksheet.
+ * Expected columns (row 1 is the header):
+ *   title       → Blog post title
+ *   slug        → URL-safe slug, e.g. "understanding-physics-basics"
+ *   published   → "true" / "yes" / "1" to mark as published; anything else = draft
+ *   description → (optional) short excerpt
+ */
+export const PUC_BLOGS_GID = "blogs";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
