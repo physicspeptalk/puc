@@ -12,6 +12,7 @@ import {
   buildBlogArticleUrl,
   type BlogPost,
 } from "../services/blogService";
+import { trackBlogArticleOpen, trackBlogViewAll } from "../utils/analytics";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -48,6 +49,7 @@ function PostCard({ post }: { post: BlogPost }) {
           href={buildBlogArticleUrl(post.slug)}
           aria-hidden="true"
           tabIndex={-1}
+          onClick={() => trackBlogArticleOpen(post.slug, post.title)}
           className="block aspect-video overflow-hidden bg-surface-50 dark:bg-surface-900"
         >
           <img
@@ -78,6 +80,7 @@ function PostCard({ post }: { post: BlogPost }) {
         <h2 className="text-lg font-bold text-surface-900 dark:text-white leading-snug mb-2 group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors">
           <a
             href={buildBlogArticleUrl(post.slug)}
+            onClick={() => trackBlogArticleOpen(post.slug, post.title)}
             className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded"
           >
             {post.title}

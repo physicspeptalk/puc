@@ -24,6 +24,10 @@ import {
   trackWhatsAppClick,
   trackCallClick,
   trackExternalLink,
+  trackDarkModeToggle,
+  trackCarouselNav,
+  trackVideoPlay,
+  trackPageView,
 } from "./utils/analytics";
 import { fetchCourses, type Course } from "./services/courseService";
 import { fetchPucTestimonials, type PucTestimonial } from "./services/testimonialService";
@@ -596,7 +600,7 @@ function FeaturedCourses() {
               <div className="flex items-center justify-center gap-4 mt-8">
                 <button
                   type="button"
-                  onClick={goPrev}
+                  onClick={() => { goPrev(); trackCarouselNav("prev"); }}
                   aria-label="Previous"
                   className="w-9 h-9 rounded-full border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 shadow-card flex items-center justify-center text-surface-500 dark:text-surface-400 hover:border-primary-300 dark:hover:border-primary-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                 >
@@ -611,7 +615,7 @@ function FeaturedCourses() {
                     <button
                       key={i}
                       type="button"
-                      onClick={() => goTo(i, i > current ? "left" : "right")}
+                      onClick={() => { goTo(i, i > current ? "left" : "right"); trackCarouselNav("dot", i); }}
                       aria-label={`Slide ${i + 1}`}
                       aria-current={i === current}
                       className={`relative h-2 rounded-full overflow-hidden transition-all duration-300 ${
@@ -635,7 +639,7 @@ function FeaturedCourses() {
 
                 <button
                   type="button"
-                  onClick={goNext}
+                  onClick={() => { goNext(); trackCarouselNav("next"); }}
                   aria-label="Next"
                   className="w-9 h-9 rounded-full border border-surface-200 dark:border-surface-700 bg-white dark:bg-surface-800 shadow-card flex items-center justify-center text-surface-500 dark:text-surface-400 hover:border-primary-300 dark:hover:border-primary-600 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                 >
@@ -752,7 +756,7 @@ function FeedbackCard({ t }: { t: PucTestimonial }) {
           />
         ) : (
           <button
-            onClick={() => setPlaying(true)}
+            onClick={() => { setPlaying(true); trackVideoPlay(t.caption || t.youtubeUrl); }}
             className="absolute inset-0 w-full h-full group"
             aria-label={`Play: ${t.caption?.slice(0, 60) || "feedback video"}`}
           >
@@ -1222,17 +1226,20 @@ export default function App() {
     setDark((d) => {
       const next = !d;
       localStorage.setItem("theme", next ? "dark" : "light");
+      trackDarkModeToggle(next ? "dark" : "light");
       return next;
     });
   };
 
   // ── Blog listing page ─────────────────────────────────────────────────────
   if (route.page === "blog-listing") {
+    trackPageView("/blogs/", "Blog — Physics Pep Talk");
     return <BlogListingPage dark={dark} onToggleDark={toggleDark} />;
   }
 
   // ── Blog article page ─────────────────────────────────────────────────────
   if (route.page === "blog-article" && route.slug) {
+    trackPageView(`/blogs/${route.slug}/`, `Blog Article — ${route.slug}`);
     return <BlogArticlePage slug={route.slug} dark={dark} onToggleDark={toggleDark} />;
   }
 

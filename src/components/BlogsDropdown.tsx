@@ -39,6 +39,11 @@ import {
   BLOGS_LISTING_URL,
   type BlogPost,
 } from "../services/blogService";
+import {
+  trackBlogDropdownOpen,
+  trackBlogArticleOpen,
+  trackBlogViewAll,
+} from "../utils/analytics";
 
 // ─── Shared hook ─────────────────────────────────────────────────────────────
 
@@ -199,9 +204,15 @@ export function BlogsDropdownDesktop() {
 
   // ── Toggle open/close ─────────────────────────────────────────────────────
 
-  const toggle = () => setOpen((v) => !v);
+  const toggle = () => {
+    setOpen((v) => {
+      if (!v) trackBlogDropdownOpen();
+      return !v;
+    });
+  };
 
-  const handleItemClick = () => {
+  const handleItemClick = (post?: BlogPost) => {
+    if (post) trackBlogArticleOpen(post.slug, post.title);
     close();
   };
 
@@ -297,7 +308,7 @@ export function BlogsDropdownDesktop() {
                     href={buildBlogArticleUrl(post.slug)}
                     role="menuitem"
                     tabIndex={0}
-                    onClick={handleItemClick}
+                    onClick={() => handleItemClick(post)}
                     className="
                       block px-4 py-2.5 text-sm text-surface-700
                       hover:text-primary-700 hover:bg-primary-50
@@ -317,7 +328,7 @@ export function BlogsDropdownDesktop() {
                   href={BLOGS_LISTING_URL}
                   role="menuitem"
                   tabIndex={0}
-                  onClick={handleItemClick}
+                  onClick={() => { trackBlogViewAll("dropdown"); handleItemClick(); }}
                   className="
                     flex items-center justify-between
                     px-4 py-2.5 text-sm font-semibold
@@ -352,7 +363,8 @@ export function BlogsAccordionMobile({ onClose }: BlogsAccordionMobileProps) {
   const [expanded, setExpanded] = useState(false);
   const panelId = "blogs-mobile-panel";
 
-  const handleItemClick = () => {
+  const handleItemClick = (post?: BlogPost) => {
+    if (post) trackBlogArticleOpen(post.slug, post.title);
     setExpanded(false);
     onClose();
   };
@@ -412,7 +424,7 @@ export function BlogsAccordionMobile({ onClose }: BlogsAccordionMobileProps) {
               <li key={post.slug}>
                 <a
                   href={buildBlogArticleUrl(post.slug)}
-                  onClick={handleItemClick}
+                  onClick={() => handleItemClick(post)}
                   className="
                     block px-2 py-2 rounded-lg text-sm
                     text-surface-600 hover:text-primary-700 hover:bg-primary-50
@@ -430,7 +442,7 @@ export function BlogsAccordionMobile({ onClose }: BlogsAccordionMobileProps) {
             <li className="border-t border-surface-100 mt-0.5 pt-0.5">
               <a
                 href={BLOGS_LISTING_URL}
-                onClick={handleItemClick}
+                onClick={() => { trackBlogViewAll("mobile_accordion"); handleItemClick(); }}
                 className="
                   flex items-center gap-1.5 px-2 py-2 rounded-lg
                   text-sm font-semibold text-primary-600
