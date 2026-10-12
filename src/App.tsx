@@ -302,7 +302,7 @@ function Hero() {
           {/* Trust strip */}
           <div className="flex flex-wrap gap-6 mt-12 pt-10 border-t border-surface-200">
             {[
-              { label: "PUC & CET", sub: "Board & Entrance Prep" },
+              { label: "PUC & KCET", sub: "Board & Entrance Prep" },
               { label: "2 Channels", sub: "Free YouTube Content" },
               { label: "PCM", sub: "Physics, Chemistry & Maths" },
             ].map((item) => (
