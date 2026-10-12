@@ -1,25 +1,15 @@
 /**
  * googleSheets.ts
  *
- * Base utility for fetching and parsing published Google Sheets CSV exports.
+ * Base utility for fetching and parsing Google Sheets data as CSV.
  *
  * PUC Spreadsheet:
  *   ID: 14rnATEfz8Y4cQge9TzPM4QUuGocLOWhQLODL33hsvJg
  *
- * How to publish the sheet as CSV:
- *   1. Open the spreadsheet in Google Sheets.
- *   2. File → Share → Publish to web.
- *   3. In "Link" tab, choose the specific sheet tab, format "Comma-separated values (.csv)".
- *   4. Click Publish. Copy the URL — it will look like:
- *      https://docs.google.com/spreadsheets/d/e/PACX-.../pub?gid=<GID>&single=true&output=csv
- *   5. Paste the published URL into PUC_SHEET_PUBLISHED_BASE_URL below.
- *
- * IMPORTANT ACCESS NOTES:
- *   - The spreadsheet must be set to "Anyone with the link can view" (or published to web).
- *   - Publishing to web generates a separate public CSV URL that does not require sign-in.
- *   - No API key or service account is needed for published CSV access.
- *   - Do NOT use the raw spreadsheet edit URL — that requires authentication.
- *   - The published CSV is read-only; no write access is granted.
+ * Access method: Google Visualization API (gviz/tq?tqx=out:csv)
+ *   - Requires the spreadsheet sharing set to "Anyone with the link can view"
+ *   - No "Publish to web" step needed
+ *   - No API key required
  *
  * GIDs used:
  *   GID 0            → Courses worksheet (course links | thumbnail | description)
@@ -35,19 +25,16 @@
 export const PUC_SPREADSHEET_ID = "14rnATEfz8Y4cQge9TzPM4QUuGocLOWhQLODL33hsvJg";
 
 /**
- * The base published URL for the PUC spreadsheet.
+ * Base URL for the PUC spreadsheet CSV export via Google Visualization API.
  *
- * ⚠️  ACTION REQUIRED:
- * Replace this placeholder with the actual published CSV URL from:
- *   File → Share → Publish to web → [choose worksheet] → CSV → Publish → copy URL
+ * This uses the gviz/tq endpoint which works as long as the spreadsheet
+ * is shared as "Anyone with the link can view". No "Publish to web" step
+ * needed, and no API key required.
  *
- * The URL format is:
- *   https://docs.google.com/spreadsheets/d/e/<PUBLISHED_ID>/pub?gid=<GID>&single=true&output=csv
- *
- * Until this is set, the app will fall back to empty states gracefully.
+ * URL format: /gviz/tq?tqx=out:csv&gid=<GID>
  */
-export const PUC_SHEET_PUBLISHED_BASE_URL =
-  "https://docs.google.com/spreadsheets/d/14rnATEfz8Y4cQge9TzPM4QUuGocLOWhQLODL33hsvJg/pub";
+export const PUC_SHEET_BASE_URL =
+  `https://docs.google.com/spreadsheets/d/${PUC_SPREADSHEET_ID}/gviz/tq`;
 
 export const PUC_COURSES_GID = "0";
 export const PUC_FEEDBACK_GID = "1342071564";
@@ -68,12 +55,11 @@ export interface SheetFetchResult {
 /**
  * Build the CSV export URL for a specific worksheet GID.
  *
- * We use the direct spreadsheet pub URL (with the spreadsheet ID, not the
- * published-to-web /e/PACX-... URL) because the spreadsheet is public.
- * This works as long as the spreadsheet sharing is set to "Anyone with the link can view".
+ * Uses the Google Visualization API (gviz/tq) which works with
+ * "Anyone with the link can view" sharing — no publish-to-web needed.
  */
 export function buildSheetCsvUrl(gid: string): string {
-  return `${PUC_SHEET_PUBLISHED_BASE_URL}?gid=${gid}&single=true&output=csv`;
+  return `${PUC_SHEET_BASE_URL}?tqx=out:csv&gid=${gid}`;
 }
 
 // ─── Fetcher ────────────────────────────────────────────────────────────────

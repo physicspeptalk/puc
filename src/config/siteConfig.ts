@@ -7,7 +7,7 @@
 
 export const siteConfig = {
   brandName: "Physics Pep Talk",
-  tagline: "PUC & Board Preparation",
+  tagline: "KCET & Board Preparation",
   siteUrl: "https://puc.physicspeptalk.com",
   parentWebsite: "https://physicspeptalk.com",
   blogUrl: "" as string, // MISSING — set when available
@@ -88,16 +88,6 @@ export interface CategoryBlock {
 
 export const categoryBlocks: CategoryBlock[] = [
   {
-    id: "cet-comedk",
-    emoji: "🏆",
-    title: "CET / COMEDK",
-    subtitle: "Competitive Entrance Preparation",
-    description:
-      "Targeted preparation for KCET and COMEDK entrance exams. Physics, Chemistry, and Mathematics with exam-focused practice and strategy.",
-    ctaLabel: "Explore CET / COMEDK Courses",
-    ctaUrl: "https://physicspeptalk.com",
-  },
-  {
     id: "puc-board",
     emoji: "📚",
     title: "PUC / Board Courses",
@@ -105,6 +95,16 @@ export const categoryBlocks: CategoryBlock[] = [
     description:
       "Comprehensive first and second PUC board exam preparation. Structured Physics lessons and revision materials aligned to the Karnataka syllabus.",
     ctaLabel: "Explore Board Courses",
+    ctaUrl: "https://physicspeptalk.com",
+  },
+  {
+    id: "cet-comedk",
+    emoji: "🏆",
+    title: "CET / COMEDK",
+    subtitle: "Competitive Entrance Preparation",
+    description:
+      "Targeted preparation for KCET and COMEDK entrance exams. Physics, Chemistry, and Mathematics with exam-focused practice and strategy.",
+    ctaLabel: "Explore CET / COMEDK Courses",
     ctaUrl: "https://physicspeptalk.com",
   },
   {

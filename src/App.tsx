@@ -144,14 +144,14 @@ function Header() {
         {/* Desktop CTA */}
         <div className="hidden md:flex items-center gap-3">
           <a
-            href={buildWhatsAppUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => trackWhatsAppClick("header")}
+            href={buildPhoneUrl()}
+            onClick={() => trackCallClick("header")}
             className="flex items-center gap-2 bg-accent-500 hover:bg-accent-600 active:bg-accent-700 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors shadow-sm"
           >
-            <WaIcon className="w-4 h-4" />
-            Enquire
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+            {siteConfig.phoneNumber}
           </a>
         </div>
 
@@ -211,14 +211,14 @@ function Header() {
             )}
             <div className="pt-3 pb-1">
               <a
-                href={buildWhatsAppUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => { trackWhatsAppClick("header_mobile"); close(); }}
+                href={buildPhoneUrl()}
+                onClick={() => { trackCallClick("header_mobile"); close(); }}
                 className="flex items-center justify-center gap-2 bg-accent-500 hover:bg-accent-600 text-white font-semibold text-sm px-4 py-3 rounded-xl w-full transition-colors"
               >
-                <WaIcon className="w-4 h-4" />
-                Enquire on WhatsApp
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                </svg>
+                {siteConfig.phoneNumber}
               </a>
             </div>
           </nav>
@@ -334,12 +334,12 @@ function Hero() {
 // FEATURED COURSES CAROUSEL
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── Course card ───────────────────────────────────────────────────────────────
+
 function CourseCard({ course }: { course: Course }) {
   const [imgErr, setImgErr] = useState(false);
-
   return (
-    <article className="flex flex-col bg-white rounded-2xl border border-surface-100 shadow-card hover:shadow-card-lg transition-shadow h-full">
-      {/* Thumbnail */}
+    <article className="flex flex-col bg-white rounded-2xl border border-surface-100 shadow-card-lg h-full">
       <div className="aspect-video rounded-t-2xl overflow-hidden bg-primary-50 flex-shrink-0">
         {course.thumbnailUrl && !imgErr ? (
           <img
@@ -358,8 +358,6 @@ function CourseCard({ course }: { course: Course }) {
           </div>
         )}
       </div>
-
-      {/* Body */}
       <div className="flex flex-col flex-1 p-5 gap-4">
         <p className="text-sm text-surface-600 leading-relaxed flex-1 line-clamp-3">
           {course.description || "Physics Pep Talk course."}
@@ -398,29 +396,36 @@ function CourseSkeleton() {
   );
 }
 
+// ── Auto-sliding 2-card carousel ──────────────────────────────────────────────
+
+const SLIDE_INTERVAL = 2000;
+
 function FeaturedCourses() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [index, setIndex] = useState(0);
-  const touchStartX = useRef<number | null>(null);
 
-  const getPerPage = useCallback(() => {
-    if (typeof window === "undefined") return 3;
-    if (window.innerWidth >= 1024) return 3;
-    if (window.innerWidth >= 640) return 2;
-    return 1;
+  const [current, setCurrent] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const [animDir, setAnimDir] = useState<"left" | "right">("left");
+  const [animating, setAnimating] = useState(false);
+
+  const touchStartX = useRef<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Mobile = 1 card, desktop = 2 cards
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 640);
+    check();
+    window.addEventListener("resize", check, { passive: true });
+    return () => window.removeEventListener("resize", check);
   }, []);
 
-  const [perPage, setPerPage] = useState(3);
+  const perView = isMobile ? 1 : 2;
+  const totalSlides = Math.max(1, Math.ceil(courses.length / perView));
 
-  useEffect(() => {
-    const upd = () => setPerPage(getPerPage());
-    upd();
-    window.addEventListener("resize", upd, { passive: true });
-    return () => window.removeEventListener("resize", upd);
-  }, [getPerPage]);
-
+  // Fetch
   useEffect(() => {
     let cancelled = false;
     fetchCourses().then(({ courses: c, error: e }) => {
@@ -429,96 +434,169 @@ function FeaturedCourses() {
     return () => { cancelled = true; };
   }, []);
 
-  const maxIdx = Math.max(0, courses.length - perPage);
-  const prev = () => setIndex((i) => Math.max(0, i - 1));
-  const next = () => setIndex((i) => Math.min(maxIdx, i + 1));
+  // Animated slide transition
+  const goTo = useCallback((next: number, dir: "left" | "right") => {
+    if (animating) return;
+    setAnimDir(dir);
+    setAnimating(true);
+    setTimeout(() => {
+      setCurrent(next);
+      setAnimating(false);
+    }, 350);
+  }, [animating]);
 
+  const goNext = useCallback(() => {
+    goTo((current + 1) % totalSlides, "left");
+  }, [current, totalSlides, goTo]);
+
+  const goPrev = useCallback(() => {
+    goTo((current - 1 + totalSlides) % totalSlides, "right");
+  }, [current, totalSlides, goTo]);
+
+  // Auto-play — pauses on hover
+  useEffect(() => {
+    if (loading || courses.length <= perView || paused) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+    timerRef.current = setInterval(goNext, SLIDE_INTERVAL);
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [loading, courses.length, perView, paused, goNext]);
+
+  // Touch swipe
   const onTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
   const onTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX.current === null) return;
     const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (Math.abs(diff) > 40) { if (diff > 0) next(); else prev(); }
+    if (Math.abs(diff) > 40) { diff > 0 ? goNext() : goPrev(); }
     touchStartX.current = null;
   };
 
+  // Slice 2 courses for this slide, pad if last slide has only 1
+  const startIdx = current * perView;
+  const visibleCourses = courses.slice(startIdx, startIdx + perView);
+  const padded: (Course | null)[] = [...visibleCourses];
+  while (padded.length < perView) padded.push(null);
+
   return (
-    <section id="courses" className="section-pad bg-surface-50" aria-label="Featured courses">
+    <section
+      id="courses"
+      className="section-pad bg-surface-50"
+      aria-label="Featured courses"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
       <div className="container-pad">
         <div className="text-center mb-12">
           <SectionLabel>Our Courses</SectionLabel>
           <h2 className="text-3xl md:text-4xl font-extrabold text-surface-900 tracking-tight mb-4">
             Featured Courses
           </h2>
-          <p className="text-surface-500 text-lg max-w-xl mx-auto">
-            Courses updated directly from our catalogue. New content added without any redeployment.
-          </p>
         </div>
 
         {!loading && error && courses.length === 0 && (
-          <div className="text-center py-14">
-            <p className="text-surface-400 text-sm font-medium">Courses temporarily unavailable — check back soon.</p>
-          </div>
+          <p className="text-center text-surface-400 text-sm py-14">Courses temporarily unavailable — check back soon.</p>
         )}
-
         {!loading && !error && courses.length === 0 && (
-          <div className="text-center py-14">
-            <p className="text-surface-400 text-sm font-medium">Courses coming soon — we're adding new content.</p>
-          </div>
+          <p className="text-center text-surface-400 text-sm py-14">Courses coming soon.</p>
         )}
 
         {(loading || courses.length > 0) && (
-          <>
+          <div className="relative">
+            {/* Hidden preload — fetch next slide's images before they appear */}
+            {!loading && courses.length > perView && (() => {
+              const nextSlide = (current + 1) % totalSlides;
+              const nextStart = nextSlide * perView;
+              return courses.slice(nextStart, nextStart + perView).map((c) =>
+                c.thumbnailUrl ? (
+                  <img
+                    key={`preload-${c.courseUrl}`}
+                    src={c.thumbnailUrl}
+                    alt=""
+                    aria-hidden="true"
+                    className="absolute w-0 h-0 opacity-0 pointer-events-none"
+                    fetchPriority="low"
+                  />
+                ) : null
+              );
+            })()}
+
+            {/* Slide window */}
             <div
               className="overflow-hidden"
               onTouchStart={onTouchStart}
               onTouchEnd={onTouchEnd}
             >
+              {/* key swap triggers the CSS animation */}
               <div
+                key={current}
                 className="grid gap-5"
-                style={{ gridTemplateColumns: `repeat(${perPage}, minmax(0, 1fr))` }}
+                style={{
+                  gridTemplateColumns: `repeat(${perView}, minmax(0, 1fr))`,
+                  animation: animating
+                    ? `${animDir === "left" ? "slideInFromRight" : "slideInFromLeft"} 350ms cubic-bezier(0.4,0,0.2,1) both`
+                    : "none",
+                }}
               >
                 {loading
-                  ? Array.from({ length: perPage }).map((_, i) => <CourseSkeleton key={i} />)
-                  : courses.slice(index, index + perPage).map((c, i) => (
-                      <CourseCard key={c.courseUrl || i} course={c} />
-                    ))}
+                  ? Array.from({ length: perView }).map((_, i) => <CourseSkeleton key={i} />)
+                  : padded.map((c, i) =>
+                      c ? (
+                        <CourseCard key={c.courseUrl || i} course={c} />
+                      ) : (
+                        <div key={`empty-${i}`} className="invisible" aria-hidden="true" />
+                      )
+                    )}
               </div>
             </div>
 
-            {!loading && courses.length > perPage && (
-              <div className="flex items-center justify-center gap-3 mt-8">
+            {/* Controls */}
+            {!loading && totalSlides > 1 && (
+              <div className="flex items-center justify-center gap-4 mt-8">
                 <button
                   type="button"
-                  onClick={prev}
-                  disabled={index === 0}
+                  onClick={goPrev}
                   aria-label="Previous"
-                  className="w-9 h-9 rounded-full border border-surface-200 bg-white flex items-center justify-center text-surface-500 hover:border-primary-300 hover:text-primary-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors shadow-card"
+                  className="w-9 h-9 rounded-full border border-surface-200 bg-white shadow-card flex items-center justify-center text-surface-500 hover:border-primary-300 hover:text-primary-600 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                   </svg>
                 </button>
 
-                <div className="flex gap-1.5">
-                  {Array.from({ length: maxIdx + 1 }).map((_, i) => (
+                {/* Progress dots */}
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: totalSlides }).map((_, i) => (
                     <button
                       key={i}
                       type="button"
-                      onClick={() => setIndex(i)}
-                      aria-label={`Page ${i + 1}`}
-                      className={`h-2 rounded-full transition-all ${
-                        i === index ? "bg-primary-600 w-6" : "bg-surface-300 hover:bg-surface-400 w-2"
+                      onClick={() => goTo(i, i > current ? "left" : "right")}
+                      aria-label={`Slide ${i + 1}`}
+                      aria-current={i === current}
+                      className={`relative h-2 rounded-full overflow-hidden transition-all duration-300 ${
+                        i === current ? "w-8 bg-surface-200" : "w-2 bg-surface-300 hover:bg-surface-400"
                       }`}
-                    />
+                    >
+                      {i === current && (
+                        <span
+                          className="absolute inset-y-0 left-0 bg-primary-600 rounded-full"
+                          style={{
+                            animation: paused
+                              ? "none"
+                              : `slideProgress ${SLIDE_INTERVAL}ms linear forwards`,
+                            width: paused ? "100%" : undefined,
+                          }}
+                        />
+                      )}
+                    </button>
                   ))}
                 </div>
 
                 <button
                   type="button"
-                  onClick={next}
-                  disabled={index >= maxIdx}
+                  onClick={goNext}
                   aria-label="Next"
-                  className="w-9 h-9 rounded-full border border-surface-200 bg-white flex items-center justify-center text-surface-500 hover:border-primary-300 hover:text-primary-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors shadow-card"
+                  className="w-9 h-9 rounded-full border border-surface-200 bg-white shadow-card flex items-center justify-center text-surface-500 hover:border-primary-300 hover:text-primary-600 transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -526,7 +604,22 @@ function FeaturedCourses() {
                 </button>
               </div>
             )}
-          </>
+
+            <style>{`
+              @keyframes slideInFromRight {
+                from { opacity: 0; transform: translateX(48px); }
+                to   { opacity: 1; transform: translateX(0); }
+              }
+              @keyframes slideInFromLeft {
+                from { opacity: 0; transform: translateX(-48px); }
+                to   { opacity: 1; transform: translateX(0); }
+              }
+              @keyframes slideProgress {
+                from { width: 0%; }
+                to   { width: 100%; }
+              }
+            `}</style>
+          </div>
         )}
       </div>
     </section>
