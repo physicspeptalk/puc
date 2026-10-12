@@ -15,17 +15,26 @@ import {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function formatDate(iso: string): string {
-  if (!iso) return "";
-  try {
-    return new Date(iso).toLocaleDateString("en-IN", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  } catch {
-    return iso;
+function formatDate(raw: string): string {
+  if (!raw || !raw.trim()) return "";
+
+  let d = new Date(raw);
+
+  if (isNaN(d.getTime())) {
+    const parts = raw.trim().split(/[-/]/);
+    if (parts.length === 3) {
+      const [a, b, c] = parts.map(Number);
+      if (c > 100) d = new Date(c, b - 1, a);
+    }
   }
+
+  if (isNaN(d.getTime())) return "";
+
+  return d.toLocaleDateString("en-IN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 // ─── Post card ────────────────────────────────────────────────────────────────

@@ -19,8 +19,7 @@ import {
 
 // ─── Marked configuration ─────────────────────────────────────────────────────
 
-// Use default renderer — headings, lists, bold, italic, code, links, images
-marked.setOptions({ async: false });
+// marked v15 uses synchronous parse by default — no configuration needed.
 
 // ─── Minimal HTML sanitizer ───────────────────────────────────────────────────
 
@@ -43,17 +42,33 @@ function sanitizeHtml(html: string): string {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatDate(iso: string): string {
-  if (!iso) return "";
-  try {
-    return new Date(iso).toLocaleDateString("en-IN", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  } catch {
-    return iso;
+function formatDate(raw: string): string {
+  if (!raw || !raw.trim()) return "";
+
+  // Try parsing as-is first (works for ISO 8601: YYYY-MM-DD)
+  let d = new Date(raw);
+
+  // Google Sheets often exports as DD-MM-YYYY or MM-DD-YYYY
+  // If the above failed or produced an invalid date, try DD-MM-YYYY
+  if (isNaN(d.getTime())) {
+    const parts = raw.trim().split(/[-/]/);
+    if (parts.length === 3) {
+      const [a, b, c] = parts.map(Number);
+      // If the first part looks like a day (≤31) and third looks like a year (≥100)
+      // assume DD-MM-YYYY
+      if (c > 100) {
+        d = new Date(c, b - 1, a); // month is 0-indexed
+      }
+    }
   }
+
+  if (isNaN(d.getTime())) return ""; // still invalid — omit silently
+
+  return d.toLocaleDateString("en-IN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 function renderMarkdown(md: string): string {

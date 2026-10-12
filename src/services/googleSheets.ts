@@ -46,7 +46,7 @@ export const PUC_FEEDBACK_GID = "1342071564";
  *   published   → "true" / "yes" / "1" to mark as published; anything else = draft
  *   description → (optional) short excerpt
  */
-export const PUC_BLOGS_GID = "blogs";
+export const PUC_BLOGS_GID = "527719336";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -117,29 +117,28 @@ export async function fetchSheetRows(gid: string): Promise<SheetFetchResult> {
  * Parse a CSV string (with header row) into an array of row objects.
  * Header keys are lowercased and trimmed.
  * Empty rows are skipped.
+ *
+ * Uses a document-level character-by-character parser so that newlines
+ * inside RFC 4180 quoted fields (e.g. multi-line Google Sheets cells)
+ * are preserved as part of the field value and do NOT split the row.
  */
 export function parseCsvToRows(csv: string): SheetRow[] {
-  const lines = csv.split(/\r?\n/);
-  if (lines.length < 2) return [];
+  const records = parseCsvToArrays(csv);
+  if (records.length < 2) return [];
 
-  // Parse header row
-  const headers = splitCsvLine(lines[0]).map((h) => h.trim().toLowerCase());
-
+  const headers = records[0].map((h) => h.trim().toLowerCase());
   const rows: SheetRow[] = [];
 
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    if (!line.trim()) continue;
-
-    const cells = splitCsvLine(line).map((c) => c.trim());
-
-    // Skip row if all cells are empty
-    if (cells.every((c) => !c)) continue;
+  for (let i = 1; i < records.length; i++) {
+    const cells = records[i];
+    // Skip rows where every cell is empty
+    if (cells.every((c) => !c.trim())) continue;
 
     const row: SheetRow = {};
     for (let j = 0; j < headers.length; j++) {
       if (headers[j]) {
-        row[headers[j]] = cells[j] ?? "";
+        // Trim whitespace from the cell but preserve internal newlines
+        row[headers[j]] = (cells[j] ?? "").trim();
       }
     }
     rows.push(row);
@@ -149,8 +148,84 @@ export function parseCsvToRows(csv: string): SheetRow[] {
 }
 
 /**
- * Minimal RFC 4180-compliant CSV line splitter.
- * Handles: plain values, "quoted, values", and ""escaped double quotes"".
+ * Document-level RFC 4180 CSV parser.
+ *
+ * Parses the entire CSV string in one pass, tracking quote state across
+ * newline characters. This correctly handles:
+ *   - Quoted fields containing commas
+ *   - Quoted fields containing newlines (multi-line cell values)
+ *   - Escaped double quotes ("")
+ *
+ * Returns an array of records, each record being an array of field strings.
+ */
+export function parseCsvToArrays(csv: string): string[][] {
+  const records: string[][] = [];
+  let record: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  let i = 0;
+
+  while (i < csv.length) {
+    const ch = csv[i];
+    const next = csv[i + 1];
+
+    if (inQuotes) {
+      if (ch === '"' && next === '"') {
+        // Escaped double-quote inside a quoted field
+        field += '"';
+        i += 2;
+      } else if (ch === '"') {
+        // End of quoted field
+        inQuotes = false;
+        i++;
+      } else {
+        // Any character inside quotes — including \n and \r — is part of the field
+        field += ch;
+        i++;
+      }
+    } else {
+      if (ch === '"') {
+        // Start of quoted field
+        inQuotes = true;
+        i++;
+      } else if (ch === ',') {
+        // Field separator
+        record.push(field);
+        field = "";
+        i++;
+      } else if (ch === '\r' && next === '\n') {
+        // Windows-style record separator
+        record.push(field);
+        field = "";
+        records.push(record);
+        record = [];
+        i += 2;
+      } else if (ch === '\n' || ch === '\r') {
+        // Unix / old-Mac record separator
+        record.push(field);
+        field = "";
+        records.push(record);
+        record = [];
+        i++;
+      } else {
+        field += ch;
+        i++;
+      }
+    }
+  }
+
+  // Push the last field and record (file may not end with a newline)
+  record.push(field);
+  if (record.some((f) => f !== "")) {
+    records.push(record);
+  }
+
+  return records;
+}
+
+/**
+ * @deprecated Use parseCsvToRows instead. Kept for backward compatibility with tests.
+ * Split a single CSV line into fields. Does NOT handle newlines inside quoted fields.
  */
 export function splitCsvLine(line: string): string[] {
   const result: string[] = [];
