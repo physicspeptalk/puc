@@ -1,0 +1,74 @@
+# robots.txt — https://counselling.physicspeptalk.com
+# Updated: 2026-10-07
+
+# Allow all crawlers (default)
+User-agent: *
+Allow: /
+
+# ── AI / LLM Crawlers ────────────────────────────────────────────────────────
+# OpenAI (ChatGPT, GPT-4, SearchGPT)
+User-agent: GPTBot
+Allow: /
+
+# OpenAI web browsing / Bing AI
+User-agent: OAI-SearchBot
+Allow: /
+
+# Anthropic (Claude)
+User-agent: anthropic-ai
+Allow: /
+
+# Anthropic web crawl
+User-agent: Claude-Web
+Allow: /
+
+# Google Gemini / Bard
+User-agent: Google-Extended
+Allow: /
+
+# Meta AI (Llama)
+User-agent: FacebookBot
+Allow: /
+
+# Meta AI crawler
+User-agent: Meta-ExternalAgent
+Allow: /
+
+# Perplexity AI
+User-agent: PerplexityBot
+Allow: /
+
+# You.com AI search
+User-agent: YouBot
+Allow: /
+
+# Cohere AI
+User-agent: cohere-ai
+Allow: /
+
+# Common Crawl (used for training many LLMs)
+User-agent: CCBot
+Allow: /
+
+# Diffbot (AI knowledge graph)
+User-agent: Diffbot
+Allow: /
+
+# Bytedance (Doubao / ByteSpider)
+User-agent: Bytespider
+Allow: /
+
+# Apple (Siri, Apple Intelligence)
+User-agent: Applebot
+Allow: /
+
+# Apple Extended
+User-agent: Applebot-Extended
+Allow: /
+
+# ── AI Content Files ─────────────────────────────────────────────────────────
+Allow: /llms.txt
+Allow: /llms-full.txt
+
+# ── Sitemap ──────────────────────────────────────────────────────────────────
+Sitemap: https://counselling.physicspeptalk.com/sitemap.xml
