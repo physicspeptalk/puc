@@ -87,6 +87,7 @@ function FacultyCard({ faculty }: { faculty: Faculty }) {
             alt={`Photo of ${faculty.name}`}
             className="w-full h-full object-cover object-top"
             loading="lazy"
+            referrerPolicy="no-referrer"
             onError={() => setImgErr(true)}
           />
         )}
