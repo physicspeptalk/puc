@@ -145,8 +145,9 @@ export function parseCsvToRows(csv: string): SheetRow[] {
     const row: SheetRow = {};
     for (let j = 0; j < headers.length; j++) {
       if (headers[j]) {
-        // Trim whitespace from the cell but preserve internal newlines
-        row[headers[j]] = (cells[j] ?? "").trim();
+        const raw = (cells[j] ?? "").trim();
+        // Auto-normalise any Google Drive share/viewer URLs in any cell
+        row[headers[j]] = normaliseImageUrl(raw);
       }
     }
     rows.push(row);
@@ -276,6 +277,84 @@ export function isValidHttpUrl(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+// ─── Image URL normaliser ────────────────────────────────────────────────────
+
+/**
+ * Convert any Google Drive share / viewer URL into a browser-embeddable image URL.
+ *
+ * WHY THIS IS NEEDED
+ * ──────────────────
+ * Google Drive share links (and the URLs Google Sheets CSV exports for cell
+ * images) cannot be used directly in <img> tags because:
+ *   1. drive.usercontent.google.com sets  cross-origin-resource-policy: same-site
+ *      which blocks cross-origin <img> loads.
+ *   2. lh3.googleusercontent.com/d/... requires an active Google session.
+ *
+ * SOLUTION
+ * ────────
+ * All Google Drive URL formats are converted to a wsrv.nl proxy URL.
+ * wsrv.nl fetches the image server-side and re-serves it with:
+ *   access-control-allow-origin: *
+ *   cross-origin-resource-policy: cross-origin
+ * making it safely embeddable from any origin, with WebP conversion for performance.
+ *
+ * SUPPORTED INPUT FORMATS
+ * ───────────────────────
+ *   https://drive.google.com/file/d/FILE_ID/view?usp=...   ← standard share link
+ *   https://drive.google.com/file/d/FILE_ID/view            ← share link (no params)
+ *   https://drive.google.com/open?id=FILE_ID
+ *   https://drive.google.com/uc?id=FILE_ID
+ *   https://drive.google.com/uc?export=view&id=FILE_ID
+ *   https://drive.google.com/thumbnail?id=FILE_ID
+ *   https://lh3.googleusercontent.com/d/FILE_ID             ← what Sheets CSV exports
+ *
+ * NON-DRIVE URLS
+ * ──────────────
+ * If the URL is already a direct image URL (not Drive), it is returned unchanged.
+ * Empty strings and invalid URLs are returned unchanged.
+ */
+export function normaliseImageUrl(raw: string): string {
+  if (!raw || typeof raw !== "string") return raw;
+  const trimmed = raw.trim();
+  if (!trimmed) return trimmed;
+
+  let fileId: string | null = null;
+
+  // ── drive.google.com/file/d/FILE_ID/... ─────────────────────────────────
+  const fileDMatch = trimmed.match(
+    /drive\.google\.com\/file\/d\/([A-Za-z0-9_-]+)/
+  );
+  if (fileDMatch) fileId = fileDMatch[1];
+
+  // ── lh3.googleusercontent.com/d/FILE_ID ─────────────────────────────────
+  if (!fileId) {
+    const lh3Match = trimmed.match(
+      /lh3\.googleusercontent\.com\/d\/([A-Za-z0-9_-]+)/
+    );
+    if (lh3Match) fileId = lh3Match[1];
+  }
+
+  // ── drive.google.com/?id=FILE_ID  (open, uc, thumbnail, etc.) ───────────
+  if (!fileId) {
+    try {
+      const u = new URL(trimmed);
+      if (u.hostname === "drive.google.com") {
+        fileId = u.searchParams.get("id");
+      }
+    } catch {
+      // not a parseable URL — fall through
+    }
+  }
+
+  if (fileId) {
+    const directUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
+    return `https://wsrv.nl/?url=${encodeURIComponent(directUrl)}&output=webp&n=-1`;
+  }
+
+  // Not a Drive URL — return as-is (already embeddable, or empty, or non-image)
+  return trimmed;
 }
 
 /**

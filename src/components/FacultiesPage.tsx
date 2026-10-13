@@ -76,7 +76,7 @@ function FacultyCard({ faculty }: { faculty: Faculty }) {
   return (
     <article className="flex flex-col bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 shadow-card hover:shadow-card-md transition-shadow overflow-hidden">
       {/* Photo / Avatar */}
-      <div className="relative w-full aspect-[4/3] bg-surface-50 dark:bg-surface-900 overflow-hidden flex-shrink-0">
+      <div className="relative w-full aspect-[9/12] bg-surface-50 dark:bg-surface-900 overflow-hidden flex-shrink-0">
         {showAvatar ? (
           <div className={`w-full h-full flex items-center justify-center ${colour}`}>
             <span className="text-white font-bold text-5xl select-none">{initials}</span>
@@ -137,7 +137,7 @@ function FacultyCard({ faculty }: { faculty: Faculty }) {
 function SkeletonCard() {
   return (
     <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 overflow-hidden animate-pulse">
-      <div className="aspect-[4/3] bg-surface-100 dark:bg-surface-700" />
+      <div className="aspect-[9/12] bg-surface-100 dark:bg-surface-700" />
       <div className="p-6 space-y-3">
         <div className="h-5 bg-surface-100 dark:bg-surface-700 rounded w-2/3" />
         <div className="h-4 bg-surface-100 dark:bg-surface-700 rounded w-1/3" />
