@@ -12,7 +12,7 @@ import {
   buildBlogArticleUrl,
   type BlogPost,
 } from "../services/blogService";
-import { trackBlogArticleOpen, trackBlogViewAll } from "../utils/analytics";
+import { trackBlogArticleOpen } from "../utils/analytics";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

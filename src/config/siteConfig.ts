@@ -40,6 +40,7 @@ export const navLinks = [
   { label: "Courses", href: "#courses" },
   { label: "YouTube", href: "#youtube" },
   { label: "Feedback", href: "#feedback" },
+  { label: "Faculties", href: "/faculties/" },
   { label: "Contact", href: "#contact" },
   { label: "Main Website", href: "https://physicspeptalk.com", external: true },
   { label: "Instagram", href: "https://www.instagram.com/physics_pep_talk", external: true },

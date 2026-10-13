@@ -49,6 +49,13 @@ export const PUC_BLOGS_GID = "527719336";
  */
 export const PUC_RESOURCES_GID = "1113027972";
 
+/**
+ * GID for the Faculties worksheet.
+ * Columns: Name | Experience | Subject | Description | Picture
+ * Row 1 is the header row.
+ */
+export const PUC_FACULTIES_GID = "645621874";
+
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 /** A parsed row as a header→value map. Headers are normalised (lowercase, trimmed). */

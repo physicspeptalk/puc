@@ -38,6 +38,7 @@ import {
 } from "./components/BlogsDropdown";
 import BlogListingPage from "./components/BlogListingPage";
 import BlogArticlePage from "./components/BlogArticlePage";
+import FacultiesPage from "./components/FacultiesPage";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // REUSABLE PRIMITIVES
@@ -1154,7 +1155,7 @@ function Footer() {
  * the real path already restored by the redirect-receiver script, so
  * window.location.pathname is accurate by the time React mounts.
  */
-function parseRoute(pathname: string): { page: "home" | "blog-listing" | "blog-article"; slug?: string } {
+function parseRoute(pathname: string): { page: "home" | "blog-listing" | "blog-article" | "faculties"; slug?: string } {
   const path = pathname.replace(/\/+$/, "") || "/"; // normalise trailing slash
 
   if (path === "/blogs" || pathname === "/blogs/") {
@@ -1164,6 +1165,10 @@ function parseRoute(pathname: string): { page: "home" | "blog-listing" | "blog-a
   const blogArticleMatch = pathname.match(/^\/blogs\/([^/]+)\/?$/);
   if (blogArticleMatch) {
     return { page: "blog-article", slug: blogArticleMatch[1] };
+  }
+
+  if (path === "/faculties" || pathname === "/faculties/") {
+    return { page: "faculties" };
   }
 
   return { page: "home" };
@@ -1241,6 +1246,12 @@ export default function App() {
   if (route.page === "blog-article" && route.slug) {
     trackPageView(`/blogs/${route.slug}/`, `Blog Article — ${route.slug}`);
     return <BlogArticlePage slug={route.slug} dark={dark} onToggleDark={toggleDark} />;
+  }
+
+  // ── Faculties page ────────────────────────────────────────────────────────
+  if (route.page === "faculties") {
+    trackPageView("/faculties/", "Our Faculties — Physics Pep Talk");
+    return <FacultiesPage dark={dark} onToggleDark={toggleDark} />;
   }
 
   // ── Home page (default) ───────────────────────────────────────────────────
