@@ -14,6 +14,11 @@
       and redirects to the root index.html, which then restores the original
       URL via the companion script in index.html.
 
+      NOTE: /blogs/ and /faculties/ are real static pages (they have their
+      own index.html files) so GitHub Pages will serve them directly without
+      hitting this 404.html at all. This script only runs for truly unknown
+      paths — mainly dynamic blog article paths like /blogs/my-post/.
+
       The path is encoded as a query string parameter "p" using a simple
       substitution — slashes are replaced with ~ so query-string parsing
       does not misinterpret them.
@@ -24,6 +29,20 @@
       (function () {
         var segmentCount = 0; // set to 1 if the repo is hosted at /repo-name/
         var l = window.location;
+        var pathname = l.pathname;
+
+        // These paths now have real index.html files — should never 404,
+        // but guard against edge cases just in case.
+        var fixedPages = ["/blogs/", "/blogs", "/faculties/", "/faculties"];
+        if (fixedPages.indexOf(pathname.replace(/\/$/, "") || pathname) !== -1) {
+          // Redirect to the canonical trailing-slash version
+          var canonical = (pathname.replace(/\/$/, "") || "/") + "/";
+          l.replace(
+            l.protocol + "//" + l.hostname + (l.port ? ":" + l.port : "") + canonical
+          );
+          return;
+        }
+
         l.replace(
           l.protocol +
             "//" +

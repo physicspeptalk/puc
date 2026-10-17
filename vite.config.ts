@@ -16,6 +16,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(import.meta.dirname, "index.html"),
+        blogs: resolve(import.meta.dirname, "blogs/index.html"),
+        faculties: resolve(import.meta.dirname, "faculties/index.html"),
       },
       output: {
         assetFileNames: "assets/[name]-[hash][extname]",
