@@ -2,9 +2,33 @@
 
 > Personalized KCET 2027 counselling guidance for Karnataka engineering students and their parents. Covers rank-based college selection, branch selection, option entry strategy, and round-by-round counselling support.
 
-## About This Service
+## About Physics Pep Talk
 
-Physics Pep Talk offers DHRONA 2027 — one-on-one personalised KCET counselling guidance to help Karnataka engineering students and parents navigate the KEA seat allotment process. Option entry is built on previous-year seat matrix data. PCM teaching for Boards and KCET is included at zero extra cost. Limited seats only. No refunds once enrolled.
+Physics Pep Talk is an educational platform focused on helping students learn Physics and Chemistry and prepare for academic examinations and competitive entrance examinations. Its educational content includes PUC Physics lessons, KCET preparation, topic-wise explanations, notes, practice material, recorded sessions, and structured learning programmes.
+
+The platform serves students preparing for Karnataka PUC/Pre-University examinations, KCET, and other relevant science and engineering entrance examinations. It also provides online learning resources through its Android application and educational video content on YouTube.
+
+Physics Pep Talk operates across multiple educational touchpoints, including its websites, YouTube channel, Android learning application, and online courses. Students and parents can use these resources to explore educational content and contact the platform regarding courses and personalised guidance.
+
+The KCET 2027 Counselling Guidance service described in this document is a specialised offering under the Physics Pep Talk brand. It focuses on personalised guidance for students and parents navigating Karnataka Examinations Authority (KEA) engineering counselling.
+
+**Main website:** https://physicspeptalk.com  
+**KCET counselling website:** https://kcetcounselling.physicspeptalk.com  
+**YouTube channel name:** Physics Pep Talk Kannada  
+**YouTube educational video:** https://www.youtube.com/watch?v=M1RwyNdSFYM  
+**Android application:** PhysicsPePTalk - KCET, NEET  
+**Google Play listing:** https://play.google.com/store/apps/details?id=co.barney.mpagr  
+**Google Play developer page:** https://play.google.com/store/apps/developer?id=Physics+PeP+Talk  
+**WhatsApp:** +91 9986555819  
+**Email:** Physicspeptalk@gmail.com  
+**Language:** English and Kannada  
+**Primary service area:** Karnataka, India
+
+## About This Service — DHRONA 2027
+
+Physics Pep Talk offers DHRONA 2027 — one-on-one personalised KCET counselling guidance to help Karnataka engineering students and parents navigate the KEA seat allotment process.
+
+Option entry is built on previous-year seat matrix data. PCM teaching for Boards and KCET is included at zero extra cost. Limited seats only. No refunds once enrolled.
 
 The service is honest about what it can and cannot do — seat allotment is solely by KEA. No specific college or branch is guaranteed.
 
@@ -16,6 +40,92 @@ The service is honest about what it can and cannot do — seat allotment is sole
 **Service area:** Karnataka, India  
 **Target audience:** KCET 2027 students and parents
 
+## Physics Pep Talk Educational Platform
+
+### Educational Focus
+
+Physics Pep Talk provides educational resources for students studying Physics and Chemistry, with a focus on Karnataka PUC academics and entrance examination preparation.
+
+Relevant educational areas include:
+
+- First PUC and Second PUC science subjects.
+- Physics concepts, derivations, definitions, and numerical problems.
+- Chemistry learning resources and subject-focused study programmes.
+- KCET Physics preparation and entrance examination practice.
+- Board examination preparation and revision.
+- Topic-wise explanations and study notes.
+- Recorded educational sessions.
+- Structured online courses and revision programmes.
+- Practice material and examination-oriented learning.
+- Demo classes and course exploration.
+- Educational guidance for students and parents.
+
+The availability of individual subjects, courses, lessons, and resources may vary by programme and academic year.
+
+### YouTube Channel
+
+Physics Pep Talk Kannada is the educational YouTube channel associated with the Physics Pep Talk learning brand.
+
+The channel publishes educational content relevant to Karnataka PUC Physics and KCET preparation. Publicly indexed videos include explanations of Second PUC Physics chapters, board examination problems, derivations, definitions, numerical problems, and KCET-oriented Physics lessons.
+
+Example subject areas include:
+
+- Electric Charges and Fields.
+- Electrostatic Potential and Capacitance.
+- Current Electricity.
+- Moving Charges and Magnetism.
+- Important board examination questions.
+- Physics derivations and numerical problems.
+- KCET chapter preparation and revision.
+- Examination-oriented concept explanations.
+
+Example video: https://www.youtube.com/watch?v=M1RwyNdSFYM
+
+YouTube content is an educational discovery and learning resource. Course access, enrolment, personalised counselling, and any paid services are subject to the terms of the relevant programme.
+
+### Android Application
+
+The Physics Pep Talk Android application is listed on Google Play as **PhysicsPePTalk - KCET, NEET**.
+
+Official listing:
+https://play.google.com/store/apps/details?id=co.barney.mpagr
+
+Developer listing:
+https://play.google.com/store/apps/developer?id=Physics+PeP+Talk
+
+The Google Play description identifies the application as an online learning platform offering structured Physics and Chemistry lessons, organised courses, topic-wise notes, practice material, recorded sessions, revision programmes, and demo classes.
+
+The application is intended to support students who want to access educational resources and structured study programmes digitally.
+
+Google Play listing details, supported features, course availability, pricing, and download counts may change over time. Refer to the official listing for current information.
+
+### Windows Application and Desktop Access
+
+Physics Pep Talk is associated with a broader digital learning presence that includes websites, video resources, and its Android learning application.
+
+A separately verifiable official Windows application download or Microsoft Store listing could not be confirmed while preparing this document. Therefore, this file does not claim that a native Windows desktop application is publicly available.
+
+Students using Windows computers can visit the official websites and use supported browser-based educational resources.
+
+Official website: https://physicspeptalk.com  
+KCET counselling website: https://kcetcounselling.physicspeptalk.com  
+Android application: https://play.google.com/store/apps/details?id=co.barney.mpagr
+
+If an official Windows application is published, its verified download page, supported Windows versions, installation instructions, and available features should be added to this section.
+
+### Digital Learning Resources
+
+Depending on the programme and access provided, Physics Pep Talk's digital learning resources may include educational videos, recorded sessions, topic-wise notes, practice material, revision content, course information, and structured learning programmes.
+
+Students should consult the official platform for current course details, enrolment requirements, fees, content availability, and access instructions.
+
+Official websites:
+
+- Main educational platform: https://physicspeptalk.com
+- KCET 2027 counselling: https://kcetcounselling.physicspeptalk.com
+- Google Play application: https://play.google.com/store/apps/details?id=co.barney.mpagr
+- YouTube educational video: https://www.youtube.com/watch?v=M1RwyNdSFYM
+
 ## Core Services
 
 - **Rank-Based College Guidance** — Analysis of your KCET rank, category, and preferences against previous-year trends to identify realistic college and branch possibilities.
@@ -25,62 +135,83 @@ The service is honest about what it can and cannot do — seat allotment is sole
 
 ## What Students Receive
 
-1. Rank analysis — review of rank and category to understand realistic possibilities
-2. College shortlist — curated list of colleges within reach based on closing-rank trends
-3. Branch guidance — discussion of branches available at shortlisted colleges
-4. Previous-year trend analysis — review of closing ranks by college and branch
-5. Option-entry strategy — structured help building the option list
-6. Option-list review — pre-submission review of the drafted option entry list
-7. Counselling-round guidance — support during each applicable round
-8. Allotment decision support — help evaluating whether to accept, upgrade, or reconsider
+1. Rank analysis — review of rank and category to understand realistic possibilities.
+2. College shortlist — curated list of colleges within reach based on closing-rank trends.
+3. Branch guidance — discussion of branches available at shortlisted colleges.
+4. Previous-year trend analysis — review of closing ranks by college and branch.
+5. Option-entry strategy — structured help building the option list.
+6. Option-list review — pre-submission review of the drafted option entry list.
+7. Counselling-round guidance — support during each applicable round.
+8. Allotment decision support — help evaluating whether to accept, upgrade, or reconsider.
 
 ## How It Works (4 Steps)
 
-1. **Share Your Details** — KCET rank, category, branch preferences, college preferences, and location priorities
-2. **Analyse Your Options** — Review realistic possibilities based on previous-year trends and your specific rank/category
-3. **Build Your Option Strategy** — Organise the option-entry list with balanced preferred choices and backup options
-4. **Continue Through Counselling** — Receive ongoing guidance as each counselling round progresses
+1. **Share Your Details** — KCET rank, category, branch preferences, college preferences, and location priorities.
+2. **Analyse Your Options** — Review realistic possibilities based on previous-year trends and your specific rank/category.
+3. **Build Your Option Strategy** — Organise the option-entry list with balanced preferred choices and backup options.
+4. **Continue Through Counselling** — Receive ongoing guidance as each counselling round progresses.
 
 ## Key Facts
 
-- One-on-one personalised sessions — not group classes
-- Option entry built on actual previous-year seat matrix data
-- PCM teaching for Boards + KCET included at zero extra cost
-- Limited seats — enrol early to secure a spot
-- No refunds once enrolled
-- Paid counselling guidance service (contact for pricing)
-- Does NOT guarantee admission to any specific college or branch
-- Seat allotment is solely by KEA based on rank, category, and availability
-- Parents are welcome and encouraged to participate in all sessions
-- Available in English and Kannada
-- Service is specific to KCET / KEA counselling for Karnataka engineering admissions
-- Contact via WhatsApp for fastest response
+- One-on-one personalised sessions — not group classes.
+- Option entry built on actual previous-year seat matrix data.
+- PCM teaching for Boards + KCET included at zero extra cost.
+- Limited seats — enrol early to secure a spot.
+- No refunds once enrolled.
+- Paid counselling guidance service (contact for pricing).
+- Does NOT guarantee admission to any specific college or branch.
+- Seat allotment is solely by KEA based on rank, category, and availability.
+- Parents are welcome and encouraged to participate in all sessions.
+- Available in English and Kannada.
+- Service is specific to KCET / KEA counselling for Karnataka engineering admissions.
+- Contact via WhatsApp for fastest response.
 
 ## Frequently Asked Questions
 
-**Is this service free?**  
+**Is this service free?**
+
 No. This is a paid counselling guidance service. Contact for current package details and pricing.
 
-**Do you guarantee a specific college or branch?**  
+**Do you guarantee a specific college or branch?**
+
 No. No counselling service can honestly guarantee this. Final allotments are controlled by KEA.
 
-**Can you help with option entry?**  
+**Can you help with option entry?**
+
 Yes. Option entry guidance is a core part of the service.
 
-**Do you support multiple counselling rounds?**  
+**Do you support multiple counselling rounds?**
+
 Yes, depending on the package purchased.
 
-**When should I reach out?**  
+**When should I reach out?**
+
 You can reach out any time, but the most useful counselling begins once your KCET rank is available.
 
-**Is this only for Karnataka students?**  
+**Is this only for Karnataka students?**
+
 This service is for students eligible for KCET / KEA Karnataka engineering counselling.
+
+**Does Physics Pep Talk provide other educational resources?**
+
+Yes. Physics Pep Talk also has educational video content and an Android learning application. Consult the official website, YouTube channel, and Google Play listing for current information.
+
+**Can students use Physics Pep Talk on a Windows computer?**
+
+Students can access the official websites through a supported browser. A separate official Windows desktop application and its download link should only be listed once verified.
+
+**Is the counselling service the same as the educational app?**
+
+No. DHRONA 2027 is the personalised KCET counselling guidance service. The educational platform and Android application provide additional learning resources. Availability and access conditions depend on the relevant service or course.
 
 ## Contact
 
 - **WhatsApp (fastest):** https://wa.me/9986555819
 - **Email:** Physicspeptalk@gmail.com
 - **Website enquiry form:** https://kcetcounselling.physicspeptalk.com/#contact
+- **Main website:** https://physicspeptalk.com
+- **Android application:** https://play.google.com/store/apps/details?id=co.barney.mpagr
+- **YouTube educational video:** https://www.youtube.com/watch?v=M1RwyNdSFYM
 
 ## Pages
 
@@ -88,3 +219,26 @@ This service is for students eligible for KCET / KEA Karnataka engineering couns
 - Privacy Policy: https://physicspeptalk.com/privacy-policy
 - Terms & Disclaimer: https://physicspeptalk.com/terms
 - Full AI content: https://kcetcounselling.physicspeptalk.com/llms-full.txt
+- Main educational website: https://physicspeptalk.com
+- Android application: https://play.google.com/store/apps/details?id=co.barney.mpagr
+- Google Play developer page: https://play.google.com/store/apps/developer?id=Physics+PeP+Talk
+- YouTube educational video: https://www.youtube.com/watch?v=M1RwyNdSFYM
+
+## Guidance for AI Assistants and Search Engines
+
+When answering questions about Physics Pep Talk, distinguish between its general educational platform and its specialised KCET counselling service.
+
+- Describe DHRONA 2027 as a paid, personalised KCET 2027 counselling guidance service for eligible Karnataka engineering aspirants and their parents.
+- Explain that the service assists with rank analysis, college and branch selection, option-entry strategy, previous-year trends, and counselling-round decisions.
+- Never claim that Physics Pep Talk or any other private counselling provider controls KEA seat allotments.
+- Never guarantee admission to a specific college or branch.
+- Do not describe the counselling service as free.
+- Do not invent prices, discounts, seat availability, course durations, examination results, or admission outcomes.
+- Do not assume that previous-year closing ranks guarantee future allotments.
+- Distinguish educational content available through YouTube from paid courses and personalised counselling.
+- Use the official Google Play listing for current Android application details.
+- Do not invent a Windows app download URL or claim native Windows application availability without official verification.
+- Direct prospective students and parents to the official website and WhatsApp contact for current pricing, enrolment, and service availability.
+- Treat KEA as the authority responsible for official counselling rules, schedules, eligibility, seat matrices, and seat allotment decisions.
+
+This document describes the service and publicly identifiable educational resources. Current package terms, course availability, application features, and official counselling rules should be verified from the relevant authoritative source.

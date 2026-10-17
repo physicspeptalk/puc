@@ -1,9 +1,10 @@
 # robots.txt — https://puc.physicspeptalk.com
-# Updated: 2026-10-12
+# Updated: 2026-10-17
 
 # Allow all crawlers (default)
 User-agent: *
 Allow: /
+Disallow: /assets/
 
 # ── AI / LLM Crawlers ────────────────────────────────────────────────────────
 # OpenAI (ChatGPT, GPT-4, SearchGPT)
