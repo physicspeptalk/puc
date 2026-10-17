@@ -1,27 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- PUC educational homepage -->
   <url>
     <loc>https://puc.physicspeptalk.com/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
-  <!-- KCET counselling page -->
   <url>
-    <loc>https://puc.physicspeptalk.com/kcet/</loc>
+    <loc>https://puc.physicspeptalk.com/blogs</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
-  <!-- COMEDK counselling page -->
   <url>
-    <loc>https://puc.physicspeptalk.com/comedk/</loc>
+    <loc>https://puc.physicspeptalk.com/faculties</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
-  </url>
-  <!-- KCET College Predictor -->
-  <url>
-    <loc>https://puc.physicspeptalk.com/kcet-college-predictor/</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
   </url>
 </urlset>
