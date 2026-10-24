@@ -2,8 +2,9 @@
  * BlogListingPage.tsx
  *
  * Renders the /blogs/ listing page.
- * Fetches all published posts from Google Sheets and displays them as cards.
- * Posts are sorted newest-first (by date column).
+ * Editorial layout: publication-style list of posts sorted newest-first.
+ * Fetches all published posts from Google Sheets.
+ * Visual direction matches the futuristic, graphic-intensive design system.
  */
 
 import { useState, useEffect } from "react";
@@ -38,94 +39,74 @@ function formatDate(raw: string): string {
   });
 }
 
-// ─── Post card ────────────────────────────────────────────────────────────────
+// ─── Post list item (editorial, not a card) ──────────────────────────────────
 
-function PostCard({ post }: { post: BlogPost }) {
+function PostItem({ post }: { post: BlogPost }) {
   return (
-    <article className="group bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 shadow-card hover:shadow-md transition-shadow overflow-hidden flex flex-col">
-      {/* Cover image */}
-      {post.coverImage && (
-        <a
-          href={buildBlogArticleUrl(post.slug)}
-          aria-hidden="true"
-          tabIndex={-1}
-          onClick={() => trackBlogArticleOpen(post.slug, post.title)}
-          className="block aspect-video overflow-hidden bg-surface-50 dark:bg-surface-900"
-        >
-          <img
-            src={post.coverImage}
-            alt=""
-            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
-            loading="lazy"
-          />
-        </a>
+    <article
+      className="flex flex-col gap-4 border-b border-surface-200 dark:border-surface-800 py-7 last:border-0 transition-colors duration-200 hover:bg-surface-50 dark:hover:bg-surface-900/30"
+      aria-label={post.title}
+    >
+      {/* Tags */}
+      {post.tags.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {post.tags.slice(0, 3).map((tag) => (
+            <span
+              key={tag}
+              className="text-xs font-semibold px-2.5 py-1 rounded-md bg-primary-50 dark:bg-primary-950/40 border border-primary-100 dark:border-primary-800 text-primary-600 dark:text-primary-400 uppercase tracking-widest"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
       )}
 
-      <div className="flex flex-col flex-1 p-6">
-        {/* Tags */}
-        {post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {post.tags.slice(0, 3).map((tag) => (
-              <span
-                key={tag}
-                className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-950 text-primary-600 dark:text-primary-400 capitalize"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
+      {/* Title */}
+      <h2 className="text-2xl md:text-3xl font-display font-bold text-ink-900 dark:text-ink-50 leading-snug mb-2 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors duration-200">
+        <a
+          href={buildBlogArticleUrl(post.slug)}
+          onClick={() => trackBlogArticleOpen(post.slug, post.title)}
+          className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded-md block"
+        >
+          {post.title}
+        </a>
+      </h2>
+
+      {/* Excerpt */}
+      {post.excerpt && (
+        <p className="text-sm text-surface-600 dark:text-surface-300 leading-relaxed line-clamp-2">
+          {post.excerpt}
+        </p>
+      )}
+
+      {/* Meta */}
+      <div className="flex items-center gap-3 text-xs text-surface-400 dark:text-surface-500 mt-2">
+        <span className="font-medium">{post.author}</span>
+        {post.date && (
+          <>
+            <span aria-hidden="true" className="mx-1">·</span>
+            <time dateTime={post.date}>{formatDate(post.date)}</time>
+          </>
         )}
-
-        {/* Title */}
-        <h2 className="text-lg font-bold text-surface-900 dark:text-white leading-snug mb-2 group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors">
-          <a
-            href={buildBlogArticleUrl(post.slug)}
-            onClick={() => trackBlogArticleOpen(post.slug, post.title)}
-            className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 rounded"
-          >
-            {post.title}
-          </a>
-        </h2>
-
-        {/* Excerpt */}
-        {post.excerpt && (
-          <p className="text-sm text-surface-600 dark:text-surface-300 leading-relaxed mb-4 flex-1 line-clamp-3">
-            {post.excerpt}
-          </p>
-        )}
-
-        {/* Meta */}
-        <div className="flex items-center gap-2 mt-auto pt-4 border-t border-surface-100 dark:border-surface-700 text-xs text-surface-400 dark:text-surface-500">
-          <span className="font-medium text-surface-500 dark:text-surface-400">{post.author}</span>
-          {post.date && (
-            <>
-              <span aria-hidden="true">·</span>
-              <time dateTime={post.date}>{formatDate(post.date)}</time>
-            </>
-          )}
-        </div>
       </div>
     </article>
   );
 }
 
-// ─── Skeleton loader ──────────────────────────────────────────────────────────
+// ─── Skeleton loader ─────────────────────────────────────────────────────────
 
-function SkeletonCard() {
+function SkeletonItem() {
   return (
-    <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 overflow-hidden animate-pulse">
-      <div className="aspect-video bg-surface-100 dark:bg-surface-700" />
-      <div className="p-6 space-y-3">
-        <div className="h-3 bg-surface-100 dark:bg-surface-700 rounded w-1/4" />
-        <div className="h-5 bg-surface-100 dark:bg-surface-700 rounded w-3/4" />
-        <div className="h-3 bg-surface-100 dark:bg-surface-700 rounded w-full" />
-        <div className="h-3 bg-surface-100 dark:bg-surface-700 rounded w-5/6" />
-      </div>
+    <div className="animate-pulse border-b border-surface-200 dark:border-surface-800 py-7">
+      <div className="h-3 bg-surface-100 dark:bg-surface-800 rounded w-1/4 mb-2" />
+      <div className="h-5 bg-surface-100 dark:bg-surface-800 rounded w-3/4 mb-3" />
+      <div className="h-3 bg-surface-100 dark:bg-surface-800 rounded w-full" />
+      <div className="h-3 bg-surface-100 dark:bg-surface-800 rounded w-5/6 mt-2" />
     </div>
   );
 }
 
-// ─── Dark mode toggle button ──────────────────────────────────────────────────
+// ─── Dark mode toggle button ─────────────────────────────────────────────────
 
 function DarkToggle({ dark, onToggle }: { dark: boolean; onToggle: () => void }) {
   return (
@@ -133,7 +114,7 @@ function DarkToggle({ dark, onToggle }: { dark: boolean; onToggle: () => void })
       type="button"
       onClick={onToggle}
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-      className="w-9 h-9 rounded-lg flex items-center justify-center text-surface-500 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+      className="w-10 h-10 rounded-lg flex items-center justify-center text-surface-500 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors duration-200"
     >
       {dark ? (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -174,14 +155,14 @@ export default function BlogListingPage({ dark, onToggleDark }: BlogListingPageP
   }, []);
 
   return (
-    <div className="min-h-screen bg-surface-50 dark:bg-surface-900">
+    <div className="min-h-screen bg-white dark:bg-surface-950 relative z-0">
       {/* Page header */}
-      <div className="bg-white dark:bg-surface-900 border-b border-surface-100 dark:border-surface-800">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 md:py-20">
+      <div className="bg-white dark:bg-surface-950 border-b border-surface-200 dark:border-surface-800">
+        <div className="container-pad py-10 md:py-14">
           <div className="flex items-center justify-between mb-6">
             <a
               href="/"
-              className="inline-flex items-center gap-1.5 text-sm text-surface-500 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm text-surface-500 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
               aria-label="Back to home"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -191,43 +172,37 @@ export default function BlogListingPage({ dark, onToggleDark }: BlogListingPageP
             </a>
             <DarkToggle dark={dark} onToggle={onToggleDark} />
           </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-surface-900 dark:text-white tracking-tight mb-3">
+          <h1 className="text-5xl md:text-6xl font-display font-bold text-ink-900 dark:text-ink-50 leading-[1.05] tracking-tight mb-3">
             Blog
           </h1>
-          <p className="text-lg text-surface-500 dark:text-surface-400">
-            Physics tips, exam strategies, and PUC guidance.
+          <p className="text-lg text-surface-600 dark:text-surface-400 readable">
+            Physics tips, exam strategies, and PUC guidance for Karnataka students.
           </p>
         </div>
       </div>
 
       {/* Content */}
-      <main
-        id="main-content"
-        className="max-w-6xl mx-auto px-4 sm:px-6 py-12 md:py-16"
-      >
+      <main id="main-content" className="container-pad py-12 md:py-16">
         {/* Error state */}
         {error && !loading && (
           <div
             role="alert"
-            className="mb-8 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900 text-red-700 dark:text-red-400 text-sm"
+            className="mb-8 p-5 rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800/50 text-surface-600 dark:text-surface-300 text-sm"
           >
-            Could not load blog posts. Please check your connection and try
-            again.
+            Could not load blog posts. Please check your connection and try again.
           </div>
         )}
 
         {/* Loading skeleton */}
         {loading && (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <SkeletonCard key={i} />
-            ))}
+          <div className="space-y-0">
+            {Array.from({ length: 5 }).map((_, i) => <SkeletonItem key={i} />)}
           </div>
         )}
 
         {/* Empty state */}
         {!loading && !error && posts.length === 0 && (
-          <div className="text-center py-20 text-surface-400 dark:text-surface-500">
+          <div className="text-center py-20 text-surface-400 dark:text-surface-500 readable mx-auto">
             <svg
               className="w-12 h-12 mx-auto mb-4 opacity-30"
               fill="none"
@@ -247,11 +222,11 @@ export default function BlogListingPage({ dark, onToggleDark }: BlogListingPageP
           </div>
         )}
 
-        {/* Post grid */}
+        {/* Post list */}
         {!loading && posts.length > 0 && (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-0">
             {posts.map((post) => (
-              <PostCard key={post.slug} post={post} />
+              <PostItem key={post.slug} post={post} />
             ))}
           </div>
         )}

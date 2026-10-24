@@ -2,12 +2,11 @@
  * FacultiesPage.tsx
  *
  * Renders the /faculties/ page listing all faculty members.
+ * Directory layout: clean, scannable grid of profiles.
  * Data is fetched from the PUC Google Spreadsheet (GID 645621874).
  *
  * Columns: Name | Experience | Subject | Description | Picture
- *
- * Picture column should contain a public HTTPS image URL.
- * If empty, a coloured avatar with the faculty member's initials is shown.
+ * Matches the futuristic graphic-intensive design system.
  */
 
 import { useState, useEffect } from "react";
@@ -21,7 +20,7 @@ function DarkToggle({ dark, onToggle }: { dark: boolean; onToggle: () => void })
       type="button"
       onClick={onToggle}
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-      className="w-9 h-9 rounded-lg flex items-center justify-center text-surface-500 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+      className="w-10 h-10 rounded-lg flex items-center justify-center text-surface-500 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors duration-200"
     >
       {dark ? (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -41,7 +40,7 @@ function DarkToggle({ dark, onToggle }: { dark: boolean; onToggle: () => void })
 /** Deterministic colour from name — same name always gets same colour */
 const AVATAR_COLOURS = [
   "bg-primary-600",
-  "bg-accent-500",
+  "bg-accent-600",
   "bg-emerald-600",
   "bg-violet-600",
   "bg-rose-500",
@@ -74,18 +73,18 @@ function FacultyCard({ faculty }: { faculty: Faculty }) {
   const colour = getAvatarColour(faculty.name);
 
   return (
-    <article className="flex flex-col bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 shadow-card hover:shadow-card-md transition-shadow overflow-hidden">
+    <article className="flex flex-col bg-white dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-xl shadow-card hover:shadow-card-hover transition-all duration-300 ease-out overflow-hidden group">
       {/* Photo / Avatar */}
-      <div className="relative w-full aspect-[9/12] bg-surface-50 dark:bg-surface-900 overflow-hidden flex-shrink-0">
+      <div className="relative w-full aspect-[3/4] bg-surface-50 dark:bg-surface-800 overflow-hidden flex-shrink-0">
         {showAvatar ? (
           <div className={`w-full h-full flex items-center justify-center ${colour}`}>
-            <span className="text-white font-bold text-5xl select-none">{initials}</span>
+            <span className="text-white font-display font-bold text-5xl select-none">{initials}</span>
           </div>
         ) : (
           <img
             src={faculty.pictureUrl}
             alt={`Photo of ${faculty.name}`}
-            className="w-full h-full object-cover object-top"
+            className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700 ease-out"
             loading="lazy"
             referrerPolicy="no-referrer"
             onError={() => setImgErr(true)}
@@ -94,14 +93,13 @@ function FacultyCard({ faculty }: { faculty: Faculty }) {
       </div>
 
       {/* Content */}
-      <div className="flex flex-col flex-1 p-6 gap-3">
-        {/* Name + subject badge */}
-        <div>
-          <h2 className="text-xl font-bold text-surface-900 dark:text-white leading-tight mb-1">
+      <div className="flex flex-col flex-1 p-6 gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-lg font-display font-bold text-ink-900 dark:text-ink-50 leading-tight">
             {faculty.name}
           </h2>
           {faculty.subject && (
-            <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-primary-50 dark:bg-primary-950 text-primary-700 dark:text-primary-300">
+            <span className="inline-flex items-center text-xs font-semibold px-2 py-1 rounded-md bg-primary-50 dark:bg-primary-950/40 border border-primary-100 dark:border-primary-800 text-primary-700 dark:text-primary-400 uppercase tracking-widest">
               {faculty.subject}
             </span>
           )}
@@ -110,7 +108,7 @@ function FacultyCard({ faculty }: { faculty: Faculty }) {
         {/* Experience */}
         {faculty.experience && (
           <div className="flex items-center gap-2 text-sm text-surface-500 dark:text-surface-400">
-            <svg className="w-4 h-4 flex-shrink-0 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <svg className="w-4 h-4 flex-shrink-0 text-accent-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span>
@@ -123,7 +121,7 @@ function FacultyCard({ faculty }: { faculty: Faculty }) {
 
         {/* Description */}
         {faculty.description && (
-          <p className="text-sm text-surface-600 dark:text-surface-300 leading-relaxed flex-1">
+          <p className="text-sm text-surface-600 dark:text-surface-300 leading-relaxed">
             {faculty.description}
           </p>
         )}
@@ -136,14 +134,14 @@ function FacultyCard({ faculty }: { faculty: Faculty }) {
 
 function SkeletonCard() {
   return (
-    <div className="bg-white dark:bg-surface-800 rounded-2xl border border-surface-100 dark:border-surface-700 overflow-hidden animate-pulse">
-      <div className="aspect-[9/12] bg-surface-100 dark:bg-surface-700" />
-      <div className="p-6 space-y-3">
-        <div className="h-5 bg-surface-100 dark:bg-surface-700 rounded w-2/3" />
-        <div className="h-4 bg-surface-100 dark:bg-surface-700 rounded w-1/3" />
-        <div className="h-3 bg-surface-100 dark:bg-surface-700 rounded w-full" />
-        <div className="h-3 bg-surface-100 dark:bg-surface-700 rounded w-5/6" />
-        <div className="h-3 bg-surface-100 dark:bg-surface-700 rounded w-4/6" />
+    <div className="rounded-xl overflow-hidden border border-surface-200 dark:border-surface-800 bg-white dark:bg-surface-900 animate-pulse">
+      <div className="aspect-[3/4] bg-surface-100 dark:bg-surface-800" />
+      <div className="p-6 space-y-2">
+        <div className="h-4 bg-surface-100 dark:bg-surface-800 rounded w-2/3" />
+        <div className="h-3 bg-surface-100 dark:bg-surface-800 rounded w-1/3 mb-2" />
+        <div className="h-3 bg-surface-100 dark:bg-surface-800 rounded w-full" />
+        <div className="h-3 bg-surface-100 dark:bg-surface-800 rounded w-5/6 mt-2" />
+        <div className="h-3 bg-surface-100 dark:bg-surface-800 rounded w-4/6" />
       </div>
     </div>
   );
@@ -171,15 +169,15 @@ export default function FacultiesPage({ dark, onToggleDark }: FacultiesPageProps
   }, []);
 
   return (
-    <div className="min-h-screen bg-surface-50 dark:bg-surface-900">
+    <div className="min-h-screen bg-white dark:bg-surface-950 relative z-0">
 
       {/* Top bar */}
-      <div className="bg-white dark:bg-surface-900 border-b border-surface-100 dark:border-surface-800">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-14 md:py-20">
+      <div className="bg-white dark:bg-surface-950 border-b border-surface-200 dark:border-surface-800">
+        <div className="container-pad py-10 md:py-14">
           <div className="flex items-center justify-between mb-6">
             <a
               href="/"
-              className="inline-flex items-center gap-1.5 text-sm text-surface-500 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              className="inline-flex items-center gap-1.5 text-sm text-surface-500 dark:text-surface-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
               aria-label="Back to home"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -191,29 +189,26 @@ export default function FacultiesPage({ dark, onToggleDark }: FacultiesPageProps
           </div>
 
           {/* Heading */}
-          <div className="inline-flex items-center gap-2 bg-primary-50 dark:bg-primary-950 border border-primary-100 dark:border-primary-800 rounded-full px-4 py-1.5 mb-5">
-            <span className="w-2 h-2 rounded-full bg-accent-500" aria-hidden="true" />
-            <span className="text-primary-700 dark:text-primary-300 text-sm font-semibold">
-              Meet the team
-            </span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-surface-900 dark:text-white tracking-tight mb-3">
+          <span className="inline-block mb-2 text-xs font-semibold text-primary-600 dark:text-primary-400 uppercase tracking-wider">
+            Meet the team
+          </span>
+          <h1 className="text-5xl md:text-6xl font-display font-bold text-ink-900 dark:text-ink-50 leading-[1.05] tracking-tight mb-3">
             Our Faculties
           </h1>
-          <p className="text-lg text-surface-500 dark:text-surface-400 max-w-2xl">
+          <p className="text-lg text-surface-600 dark:text-surface-400 readable">
             Experienced educators dedicated to helping PUC students excel in board exams, KCET, and COMEDK.
           </p>
         </div>
       </div>
 
       {/* Content */}
-      <main id="main-content" className="max-w-6xl mx-auto px-4 sm:px-6 py-12 md:py-16">
+      <main id="main-content" className="container-pad py-12 md:py-16">
 
         {/* Error */}
         {error && !loading && (
           <div
             role="alert"
-            className="mb-8 p-4 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900 text-red-700 dark:text-red-400 text-sm"
+            className="mb-8 p-5 rounded-lg border border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800/50 text-surface-600 dark:text-surface-300 text-sm"
           >
             Could not load faculty profiles. Please check your connection and try again.
           </div>
@@ -221,14 +216,14 @@ export default function FacultiesPage({ dark, onToggleDark }: FacultiesPageProps
 
         {/* Skeleton */}
         {loading && (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
           </div>
         )}
 
         {/* Empty */}
         {!loading && !error && faculties.length === 0 && (
-          <div className="text-center py-20 text-surface-400 dark:text-surface-500">
+          <div className="text-center py-20 text-surface-400 dark:text-surface-500 readable mx-auto">
             <svg className="w-12 h-12 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
@@ -239,7 +234,7 @@ export default function FacultiesPage({ dark, onToggleDark }: FacultiesPageProps
 
         {/* Grid */}
         {!loading && faculties.length > 0 && (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
             {faculties.map((f) => (
               <FacultyCard key={f.name} faculty={f} />
             ))}
@@ -248,17 +243,17 @@ export default function FacultiesPage({ dark, onToggleDark }: FacultiesPageProps
       </main>
 
       {/* Footer strip */}
-      <div className="border-t border-surface-100 dark:border-surface-800 mt-4">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 flex items-center justify-between">
+      <div className="border-t border-surface-100 dark:border-surface-800 mt-10">
+        <div className="container-pad py-8 flex flex-col sm:flex-row items-center justify-between gap-3">
           <a
             href="/"
-            className="text-sm text-surface-400 dark:text-surface-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+            className="text-sm text-surface-400 dark:text-surface-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
           >
             ← Back to home
           </a>
           <a
             href="/"
-            className="text-sm text-surface-400 dark:text-surface-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+            className="text-sm text-surface-400 dark:text-surface-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors duration-200"
           >
             physicspeptalk.com
           </a>
