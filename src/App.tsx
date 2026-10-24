@@ -23,7 +23,6 @@ import {
   trackExternalLink,
   trackVideoPlay,
   trackPageView,
-  trackDarkModeToggle,
 } from "./utils/analytics";
 import { fetchCourses, type Course } from "./services/courseService";
 import { fetchPucTestimonials, type PucTestimonial } from "./services/testimonialService";
@@ -233,7 +232,7 @@ function StopHeading({
 // HEADER
 // ─────────────────────────────────────────────────────────────────────────────
 
-function Header({ dark, onToggleDark }: { dark: boolean; onToggleDark: () => void }) {
+function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled]  = useState(false);
 
@@ -304,22 +303,6 @@ function Header({ dark, onToggleDark }: { dark: boolean; onToggleDark: () => voi
 
         {/* Desktop right */}
         <div className="hidden md:flex items-center gap-3">
-          <button
-            type="button"
-            onClick={onToggleDark}
-            aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-surface-500 hover:text-ink-50 hover:bg-surface-800 transition-all duration-200"
-          >
-            {dark ? (
-              <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
-              </svg>
-            ) : (
-              <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
-            )}
-          </button>
           <a
             href={buildWhatsAppUrl()}
             target="_blank"
@@ -334,22 +317,6 @@ function Header({ dark, onToggleDark }: { dark: boolean; onToggleDark: () => voi
 
         {/* Mobile controls */}
         <div className="md:hidden flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={onToggleDark}
-            aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-            className="p-2 rounded-lg text-surface-400 hover:bg-surface-800 transition-colors duration-200"
-          >
-            {dark ? (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M17.657 17.657l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z" />
-              </svg>
-            ) : (
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-              </svg>
-            )}
-          </button>
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
@@ -1239,47 +1206,22 @@ function useRoute() {
 export default function App() {
   const route = useRoute();
 
-  const [dark, setDark] = useState<boolean>(() => {
-    const stored = localStorage.getItem("theme");
-    if (stored === "dark") return true;
-    if (stored === "light") return false;
-    try {
-      if (window.matchMedia("(prefers-color-scheme: light)").matches) return false;
-      if (window.matchMedia("(prefers-color-scheme: dark)").matches) return true;
-    } catch { /* matchMedia unavailable */ }
-    return true; // default dark — roadmap theme is dark-first
-  });
-
   useEffect(() => {
-    // roadmap is always dark — keep html class in sync for components that check it
+    // Always dark — lock the class permanently
     document.documentElement.classList.add("dark");
-    if (dark) {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-  }, [dark]);
-
-  const toggleDark = () => {
-    setDark((d) => {
-      const next = !d;
-      localStorage.setItem("theme", next ? "dark" : "light");
-      trackDarkModeToggle(next ? "dark" : "light");
-      return next;
-    });
-  };
+  }, []);
 
   if (route.page === "blog-listing") {
     trackPageView("/blogs/", "Blog — Physics Pep Talk");
-    return <BlogListingPage dark={dark} onToggleDark={toggleDark} />;
+    return <BlogListingPage />;
   }
   if (route.page === "blog-article" && route.slug) {
     trackPageView(`/blogs/${route.slug}/`, `Blog Article — ${route.slug}`);
-    return <BlogArticlePage slug={route.slug} dark={dark} onToggleDark={toggleDark} />;
+    return <BlogArticlePage slug={route.slug} />;
   }
   if (route.page === "faculties") {
     trackPageView("/faculties/", "Our Faculties — Physics Pep Talk");
-    return <FacultiesPage dark={dark} onToggleDark={toggleDark} />;
+    return <FacultiesPage />;
   }
 
   return (
@@ -1297,7 +1239,7 @@ export default function App() {
         Skip to main content
       </a>
 
-      <Header dark={dark} onToggleDark={toggleDark} />
+      <Header />
 
       <main id="main-content" className="relative z-10">
         {/* Hero is full-screen, outside the roadmap spine */}
