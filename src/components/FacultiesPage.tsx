@@ -6,7 +6,7 @@
  * Matches the dark futuristic design system (indigo/teal palette, grid bg, particles).
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { fetchFaculties, type Faculty } from "../services/facultyService";
 import { PageLoader } from "./PageLoader";
 
@@ -105,63 +105,110 @@ function getInitials(name: string): string {
 
 function FacultyCard({ faculty }: { faculty: Faculty }) {
   const [imgErr, setImgErr] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
   const showAvatar = !faculty.pictureUrl || imgErr;
   const colour = getAvatarColour(faculty.name);
 
-  return (
-    <article className="map-card scan-target flex flex-col overflow-hidden group hover:border-primary-500/40 transition-all duration-300">
-      {/* Photo / Avatar */}
-      <div className="relative w-full aspect-[3/4] bg-surface-900 overflow-hidden flex-shrink-0">
-        {showAvatar ? (
-          <div className={`w-full h-full flex items-center justify-center ${colour}`}>
-            <span className="text-white font-display font-bold text-5xl select-none">
-              {getInitials(faculty.name)}
-            </span>
-          </div>
-        ) : (
-          <img
-            src={faculty.pictureUrl}
-            alt={`Photo of ${faculty.name}`}
-            className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-700 ease-out"
-            loading="lazy"
-            referrerPolicy="no-referrer"
-            onError={() => setImgErr(true)}
-          />
-        )}
-        {/* Top gradient overlay */}
-        <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-surface-950/80 to-transparent pointer-events-none" />
-      </div>
+  // 3-D tilt on mouse move
+  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;   // 0→1
+    const y = (e.clientY - rect.top)  / rect.height;  // 0→1
+    const rx = (y - 0.5) * -16;  // −8 to +8 deg
+    const ry = (x - 0.5) *  16;
+    const mx = x * 100;
+    const my = y * 100;
+    el.style.setProperty("--rx", `${rx}deg`);
+    el.style.setProperty("--ry", `${ry}deg`);
+    el.style.setProperty("--mx", `${mx}%`);
+    el.style.setProperty("--my", `${my}%`);
+  }
 
-      {/* Content */}
-      <div className="flex flex-col flex-1 p-6 gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-lg font-display font-bold text-ink-50 leading-tight">
-            {faculty.name}
-          </h2>
+  function handleMouseLeave() {
+    const el = cardRef.current;
+    if (!el) return;
+    el.style.setProperty("--rx", "0deg");
+    el.style.setProperty("--ry", "0deg");
+  }
+
+  return (
+    <div
+      className="faculty-card-3d"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      <article
+        ref={cardRef}
+        className="faculty-card-inner flex flex-col overflow-hidden group"
+        style={{ "--rx": "0deg", "--ry": "0deg", "--mx": "50%", "--my": "50%" } as React.CSSProperties}
+      >
+        {/* Specular shine layer */}
+        <div className="faculty-card-shine" aria-hidden="true" />
+
+        {/* Particle burst */}
+        <div className="fc-particles" aria-hidden="true">
+          {[1,2,3,4,5,6].map((n) => <div key={n} className="fc-particle" />)}
+        </div>
+
+        {/* Photo / Avatar */}
+        <div className="relative w-full aspect-[3/4] bg-surface-900 overflow-hidden flex-shrink-0">
+          {showAvatar ? (
+            <div className={`w-full h-full flex items-center justify-center ${colour} relative`}>
+              {/* Orbit ring around avatar initials */}
+              <div className="relative">
+                <div className="faculty-avatar-ring" aria-hidden="true" />
+                <span className="text-white font-display font-bold text-5xl select-none relative z-10">
+                  {getInitials(faculty.name)}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <img
+              src={faculty.pictureUrl}
+              alt={`Photo of ${faculty.name}`}
+              className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700 ease-out"
+              loading="lazy"
+              referrerPolicy="no-referrer"
+              onError={() => setImgErr(true)}
+            />
+          )}
+          {/* Bottom gradient */}
+          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-surface-950/90 to-transparent pointer-events-none" />
+
+          {/* Subject badge — levitates on hover */}
           {faculty.subject && (
-            <span className="inline-flex items-center text-xs font-semibold px-2 py-1 rounded-md bg-primary-950/40 border border-primary-800 text-primary-400 uppercase tracking-widest">
-              {faculty.subject}
-            </span>
+            <div className="faculty-badge absolute bottom-3 left-3">
+              <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-md bg-primary-950/80 border border-primary-700 text-primary-300 uppercase tracking-widest backdrop-blur-sm">
+                {faculty.subject}
+              </span>
+            </div>
           )}
         </div>
 
-        {faculty.experience && (
-          <div className="flex items-center gap-2 text-sm text-surface-400">
-            <svg className="w-4 h-4 flex-shrink-0 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span>
-              <span className="font-semibold text-surface-300">{faculty.experience}</span>
-              {/^\d/.test(faculty.experience) ? " years of experience" : ""}
-            </span>
-          </div>
-        )}
+        {/* Content */}
+        <div className="flex flex-col flex-1 p-6 gap-3">
+          <h2 className="text-lg font-display font-bold text-ink-50 leading-tight group-hover:text-primary-200 transition-colors duration-300">
+            {faculty.name}
+          </h2>
 
-        {faculty.description && (
-          <p className="text-sm text-surface-400 leading-relaxed">{faculty.description}</p>
-        )}
-      </div>
-    </article>
+          {faculty.experience && (
+            <div className="flex items-center gap-2 text-sm text-surface-400">
+              <svg className="w-4 h-4 flex-shrink-0 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-semibold text-surface-300">{faculty.experience}</span>
+              {/^\d/.test(faculty.experience) ? <span className="text-surface-500">years of experience</span> : null}
+            </div>
+          )}
+
+          {faculty.description && (
+            <p className="text-sm text-surface-400 leading-relaxed">{faculty.description}</p>
+          )}
+        </div>
+      </article>
+    </div>
   );
 }
 
