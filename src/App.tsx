@@ -34,6 +34,7 @@ import {
 import BlogListingPage from "./components/BlogListingPage";
 import BlogArticlePage from "./components/BlogArticlePage";
 import FacultiesPage from "./components/FacultiesPage";
+import HeroLocomotive from "./components/Locomotive/HeroLocomotive";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SCROLL PROGRESS BAR
@@ -490,6 +491,9 @@ function Hero() {
       <div className="hero-orbit hero-orbit-1" aria-hidden="true" />
       <div className="hero-orbit hero-orbit-2" aria-hidden="true" />
       <div className="hero-orbit hero-orbit-3" aria-hidden="true" />
+
+      {/* Autonomous slow locomotive model, strictly inside Hero, traveling below buttons */}
+      <HeroLocomotive />
 
       <div className="container-pad relative z-10 py-16 sm:py-20">
         <div className="grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
@@ -1211,54 +1215,56 @@ export default function App() {
     document.documentElement.classList.add("dark");
   }, []);
 
+  let content: React.ReactNode = null;
+
   if (route.page === "blog-listing") {
     trackPageView("/blogs/", "Blog — Physics Pep Talk");
-    return <BlogListingPage />;
-  }
-  if (route.page === "blog-article" && route.slug) {
+    content = <BlogListingPage />;
+  } else if (route.page === "blog-article" && route.slug) {
     trackPageView(`/blogs/${route.slug}/`, `Blog Article — ${route.slug}`);
-    return <BlogArticlePage slug={route.slug} />;
-  }
-  if (route.page === "faculties") {
+    content = <BlogArticlePage slug={route.slug} />;
+  } else if (route.page === "faculties") {
     trackPageView("/faculties/", "Our Faculties — Physics Pep Talk");
-    return <FacultiesPage />;
+    content = <FacultiesPage />;
+  } else {
+    content = (
+      <div className="min-h-screen bg-surface-950 relative overflow-x-hidden">
+        {/* ── Fixed ambient layers ─────────────────────────────────── */}
+        <div className="map-bg" aria-hidden="true" />
+        <ParticleField />
+        <ScrollProgress />
+
+        {/* Skip link */}
+        <a
+          href="#main-content"
+          className="absolute -top-12 left-4 z-[9999] bg-primary-600 text-white px-4 py-2 rounded-lg font-semibold text-sm focus:top-4 transition-all duration-200"
+        >
+          Skip to main content
+        </a>
+
+        <Header />
+
+        <main id="main-content" className="relative z-10">
+          {/* Hero is full-screen, outside the roadmap spine */}
+          <Hero />
+
+          {/* ── ROADMAP ─────────────────────────────────────────────── */}
+          <div className="roadmap relative">
+            {/* Continuous spine line */}
+            <div className="roadmap-spine" aria-hidden="true" />
+
+            <FeaturedCourses />
+            <CategoryBlocks />
+            <StudentFeedback />
+            <YouTubeSection />
+            <Contact />
+          </div>
+        </main>
+
+        <Footer />
+      </div>
+    );
   }
 
-  return (
-    <div className="min-h-screen bg-surface-950 relative overflow-x-hidden">
-      {/* ── Fixed ambient layers ─────────────────────────────────── */}
-      <div className="map-bg" aria-hidden="true" />
-      <ParticleField />
-      <ScrollProgress />
-
-      {/* Skip link */}
-      <a
-        href="#main-content"
-        className="absolute -top-12 left-4 z-[9999] bg-primary-600 text-white px-4 py-2 rounded-lg font-semibold text-sm focus:top-4 transition-all duration-200"
-      >
-        Skip to main content
-      </a>
-
-      <Header />
-
-      <main id="main-content" className="relative z-10">
-        {/* Hero is full-screen, outside the roadmap spine */}
-        <Hero />
-
-        {/* ── ROADMAP ─────────────────────────────────────────────── */}
-        <div className="roadmap relative">
-          {/* Continuous spine line */}
-          <div className="roadmap-spine" aria-hidden="true" />
-
-          <FeaturedCourses />
-          <CategoryBlocks />
-          <StudentFeedback />
-          <YouTubeSection />
-          <Contact />
-        </div>
-      </main>
-
-      <Footer />
-    </div>
-  );
+  return <>{content}</>;
 }
