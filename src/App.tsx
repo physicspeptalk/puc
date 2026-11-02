@@ -1570,21 +1570,20 @@ export default function App() {
     };
   }, []);
 
-  if (route.page === "blog-listing") {
-    trackPageView("/blogs/", "Blog — Physics Pep Talk");
-    return <BlogListingPage />;
-  }
-  if (route.page === "blog-article" && route.slug) {
-    trackPageView(`/blogs/${route.slug}/`, `Blog Article — ${route.slug}`);
-    return <BlogArticlePage slug={route.slug} />;
-  }
-  if (route.page === "faculties") {
-    trackPageView("/faculties/", "Our Faculties — Physics Pep Talk");
-    return <FacultiesPage />;
-  }
+  useEffect(() => {
+    if (route.page === "blog-listing") {
+      trackPageView("/blogs/", "Blog — Physics Pep Talk");
+    } else if (route.page === "blog-article" && route.slug) {
+      trackPageView(`/blogs/${route.slug}/`, `Blog Article — ${route.slug}`);
+    } else if (route.page === "faculties") {
+      trackPageView("/faculties/", "Our Faculties — Physics Pep Talk");
+    } else {
+      trackPageView("/", "Home — Physics Pep Talk");
+    }
+  }, [route]);
 
   return (
-    <div className="min-h-screen bg-[#F5F7FA] text-gray-900 font-sans antialiased selection:bg-[#0056D2] selection:text-white">
+    <div className="min-h-screen bg-[#F5F7FA] text-gray-900 font-sans antialiased selection:bg-[#0056D2] selection:text-white flex flex-col justify-between">
       <ScrollProgress />
 
       <a
@@ -1596,37 +1595,45 @@ export default function App() {
 
       <Header />
 
-      <main id="main-content">
-        {/* Coursera Hero Carousel Banners & "New and Popular" Section */}
-        <Hero
-          courses={courses}
-          testimonials={testimonials}
-          links={resourceLinks}
-          loadingCourses={loadingCourses}
-        />
+      <main id="main-content" className="flex-1">
+        {route.page === "home" && (
+          <>
+            {/* Coursera Hero Carousel Banners & "New and Popular" Section */}
+            <Hero
+              courses={courses}
+              testimonials={testimonials}
+              links={resourceLinks}
+              loadingCourses={loadingCourses}
+            />
 
-        {/* Full Academic Course Catalog */}
-        <FeaturedCoursesSection
-          courses={courses}
-          loading={loadingCourses}
-          error={coursesError}
-        />
+            {/* Full Academic Course Catalog */}
+            <FeaturedCoursesSection
+              courses={courses}
+              loading={loadingCourses}
+              error={coursesError}
+            />
 
-        {/* Specialized Study Tracks */}
-        <CategoryBlocksSection />
+            {/* Specialized Study Tracks */}
+            <CategoryBlocksSection />
 
-        {/* Real Student Video Reviews */}
-        <StudentFeedbackSection
-          items={testimonials}
-          loading={loadingTestimonials}
-          error={testimonialsError}
-        />
+            {/* Real Student Video Reviews */}
+            <StudentFeedbackSection
+              items={testimonials}
+              loading={loadingTestimonials}
+              error={testimonialsError}
+            />
 
-        {/* Official YouTube Channels */}
-        <YouTubeSection />
+            {/* Official YouTube Channels */}
+            <YouTubeSection />
 
-        {/* Direct Contact & Support */}
-        <ContactSection />
+            {/* Direct Contact & Support */}
+            <ContactSection />
+          </>
+        )}
+
+        {route.page === "blog-listing" && <BlogListingPage />}
+        {route.page === "blog-article" && route.slug && <BlogArticlePage slug={route.slug} />}
+        {route.page === "faculties" && <FacultiesPage />}
       </main>
 
       <Footer />
