@@ -16,6 +16,15 @@ export const siteConfig = {
   instagramUrl: "https://www.instagram.com/physics_pep_talk",
   youtubeMainUrl: "https://youtube.com/@physicspeptalk",
   youtubeKcetUrl: "https://youtube.com/@peptalkinfokcet",
+  playStoreUrl: "https://play.google.com/store/apps/details?id=co.barney.mpagr",
+
+  // Trust & Social Proof stats
+  stats: {
+    paidStudents: "5,000+",
+    counselledStudents: "1,000+",
+    playStoreRating: "4.8",
+    playStoreLabel: "On Play Store",
+  },
 
   // Contact
   whatsappNumber: "9986555819",
