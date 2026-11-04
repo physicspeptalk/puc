@@ -14,7 +14,7 @@
  * - Preserves all business logic, Google Sheets live fetching, and analytics.
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import peptalkLogo from "./assets/peptalklogo.png";
 import {
   siteConfig,
@@ -33,6 +33,15 @@ import {
   trackPageView,
 } from "./utils/analytics";
 import { fetchCourses, type Course } from "./services/courseService";
+import {
+  HERO_SLIDE_DURATION_MS,
+  DEFAULT_FALLBACK_COURSES,
+  THEMES,
+  calculateCarouselDimensions,
+  calculateTrackTranslateX,
+  getExtendedSlides,
+  normalizeActiveIndex,
+} from "./utils/carousel";
 import { fetchPucTestimonials, type PucTestimonial } from "./services/testimonialService";
 import { fetchResourceLinks, type ResourceLinks } from "./services/resourcesService";
 import {
@@ -419,83 +428,148 @@ function Header() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COURSERA HERO CAROUSEL BANNERS (Dual Showcase Banner Stack)
-// Matches the Coursera Diwali / AI Analytics Banner pattern in user screenshot
+// COURSERA HERO CAROUSEL BANNERS (Scrollable Peeking Carousel Track)
+// Matches Coursera.org's sliding hero track with centered active card & peeking sides
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface HeroProps {
   courses: Course[];
-  testimonials: PucTestimonial[];
-  links: ResourceLinks | null;
   loadingCourses: boolean;
 }
 
-const HERO_SLIDE_DURATION_MS = 5000;
+function Hero({ courses, loadingCourses }: HeroProps) {
 
-function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
-  const featuredCourse = courses[0] || null;
-  const secondCourse = courses[1] || courses[0] || null;
+  const effectiveCourses = courses.length > 0 ? courses : DEFAULT_FALLBACK_COURSES;
+  const isMultiSlide = effectiveCourses.length > 1;
 
-  const [slideIndex, setSlideIndex] = useState(0);
+  // Track infinite loop slides: [lastClone, ...courses, firstClone] when isMultiSlide
+  const extendedCourses = useMemo(() => getExtendedSlides(effectiveCourses), [effectiveCourses]);
+
+  const [currentIndex, setCurrentIndex] = useState(1);
+  const [enableTransition, setEnableTransition] = useState(true);
   const [progress, setProgress] = useState(0); // 0 to 100%
   const [isPaused, setIsPaused] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
 
+  const [containerWidth, setContainerWidth] = useState<number>(() => {
+    if (typeof window !== "undefined") {
+      return Math.min(window.innerWidth - 32, 1216);
+    }
+    return 1024;
+  });
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
   const progressRef = useRef(0);
   const startTimeRef = useRef(0);
   const isPausedRef = useRef(isPaused);
+  const isTransitioningRef = useRef(false);
 
   useEffect(() => {
     isPausedRef.current = isPaused;
   }, [isPaused]);
 
-  const activeIndex = courses.length > 0 ? slideIndex % courses.length : 0;
+  // Responsive container width measuring
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth);
+      }
+    };
+    updateWidth();
 
-  const goToSlide = useCallback((idx: number) => {
-    setSlideIndex(idx);
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && containerRef.current) {
+      ro = new ResizeObserver(updateWidth);
+      ro.observe(containerRef.current);
+    }
+    window.addEventListener("resize", updateWidth);
+
+    return () => {
+      window.removeEventListener("resize", updateWidth);
+      if (ro) ro.disconnect();
+    };
+  }, []);
+
+  // Adjust slide position when courses change
+  const [prevCoursesCount, setPrevCoursesCount] = useState(effectiveCourses.length);
+  if (effectiveCourses.length !== prevCoursesCount) {
+    setPrevCoursesCount(effectiveCourses.length);
+    setCurrentIndex(1);
+  }
+
+  // Double rAF after disabling transition for loop reset
+  useEffect(() => {
+    if (!enableTransition) {
+      const r1 = requestAnimationFrame(() => {
+        const r2 = requestAnimationFrame(() => {
+          setEnableTransition(true);
+        });
+        return () => cancelAnimationFrame(r2);
+      });
+      return () => cancelAnimationFrame(r1);
+    }
+  }, [enableTransition]);
+
+  // Active index for dots and progress bar (maps 1..N to 0..N-1, with wrap around)
+  const activeIndex = normalizeActiveIndex(currentIndex, effectiveCourses.length);
+
+  const handleNext = useCallback(() => {
+    if (!isMultiSlide) return;
+    if (isTransitioningRef.current) return;
+    isTransitioningRef.current = true;
+    setEnableTransition(true);
+    setCurrentIndex((prev) => prev + 1);
     progressRef.current = 0;
     setProgress(0);
     startTimeRef.current = Date.now();
-  }, []);
 
-  const handlePrev = () => {
-    if (courses.length <= 1) return;
-    goToSlide((slideIndex - 1 + courses.length) % courses.length);
-  };
+    setTimeout(() => {
+      isTransitioningRef.current = false;
+    }, 600);
+  }, [isMultiSlide]);
 
-  const handleNext = () => {
-    if (courses.length <= 1) return;
-    goToSlide((slideIndex + 1) % courses.length);
-  };
+  const handlePrev = useCallback(() => {
+    if (!isMultiSlide) return;
+    if (isTransitioningRef.current) return;
+    isTransitioningRef.current = true;
+    setEnableTransition(true);
+    setCurrentIndex((prev) => prev - 1);
+    progressRef.current = 0;
+    setProgress(0);
+    startTimeRef.current = Date.now();
 
-  // Touch swipe support for mobile with 2D gesture disambiguation
-  const touchStartXRef = useRef<number | null>(null);
-  const touchStartYRef = useRef<number | null>(null);
+    setTimeout(() => {
+      isTransitioningRef.current = false;
+    }, 600);
+  }, [isMultiSlide]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartXRef.current = e.touches[0].clientX;
-    touchStartYRef.current = e.touches[0].clientY;
-  };
+  const goToSlide = useCallback((targetRealIdx: number) => {
+    if (!isMultiSlide) return;
+    const targetIdx = targetRealIdx + 1;
+    if (targetIdx === currentIndex) return;
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
-    const diffX = e.changedTouches[0].clientX - touchStartXRef.current;
-    const diffY = e.changedTouches[0].clientY - touchStartYRef.current;
+    if (isTransitioningRef.current) return;
+    isTransitioningRef.current = true;
+    setEnableTransition(true);
+    setCurrentIndex(targetIdx);
+    progressRef.current = 0;
+    setProgress(0);
+    startTimeRef.current = Date.now();
 
-    // Only recognize intentional horizontal swipe: must exceed 40px and dominate vertical scrolling
-    if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY) * 1.25) {
-      if (diffX > 0) {
-        handlePrev();
-      } else {
-        handleNext();
-      }
-    }
-    touchStartXRef.current = null;
-    touchStartYRef.current = null;
-  };
+    setTimeout(() => {
+      isTransitioningRef.current = false;
+    }, 600);
+  }, [isMultiSlide, currentIndex]);
 
-  // Continuous filling progress bar: slowly fills up and moves to next slide at 100%
+  const handleNextRef = useRef(handleNext);
   useEffect(() => {
-    if (courses.length <= 1) return;
+    handleNextRef.current = handleNext;
+  }, [handleNext]);
+
+  // Progress bar animation loop and auto-advancing
+  useEffect(() => {
+    if (!isMultiSlide) return;
 
     startTimeRef.current = Date.now() - (progressRef.current / 100) * HERO_SLIDE_DURATION_MS;
     let animId: number;
@@ -509,13 +583,12 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
         setProgress(pct);
 
         if (pct >= 100) {
-          setSlideIndex((prev) => (prev + 1) % courses.length);
+          handleNextRef.current();
           progressRef.current = 0;
           setProgress(0);
           startTimeRef.current = Date.now();
         }
       } else {
-        // While paused on hover, freeze progress smoothly
         startTimeRef.current = Date.now() - (progressRef.current / 100) * HERO_SLIDE_DURATION_MS;
       }
       animId = requestAnimationFrame(tick);
@@ -523,31 +596,150 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
 
     animId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(animId);
-  }, [courses.length]);
+  }, [isMultiSlide, effectiveCourses.length]);
 
-  // Both banners are strictly derived from GID 0 (courses array)
-  const banner1Course = courses.length > 0 ? courses[slideIndex % courses.length] : null;
-  const banner2Course = courses.length > 1
-    ? courses[(slideIndex + 1) % courses.length]
-    : banner1Course;
+  // Seamless infinite loop transition reset
+  const handleTransitionEnd = (e: React.TransitionEvent<HTMLDivElement>) => {
+    if (e.target !== trackRef.current) return;
+    if (e.propertyName !== "transform") return;
 
-  const b1DescLower = (banner1Course?.description || "").toLowerCase();
-  const b1Subtitle = b1DescLower.includes("counselling")
-    ? "Comprehensive step-by-step guidance for KCET & COMEDK option entry, college cut-offs, and seat selection."
-    : b1DescLower.includes("boards")
-    ? "Master 1st & 2nd PUC Boards theory, derivations, numerical problem solving, and KCET preparation."
-    : "Master 1st & 2nd PUC Physics, Chemistry, and Mathematics with syllabus-aligned lessons, shortcut tricks, and full test series.";
+    isTransitioningRef.current = false;
 
-  const b2DescLower = (banner2Course?.description || "").toLowerCase();
-  const b2Subtitle = b2DescLower.includes("counselling")
-    ? "Step-by-step guidance for engineering option entry, college rankings, branch priorities, and round-by-round seat selection."
-    : b2DescLower.includes("boards")
-    ? "Concept clarity, board exam NCERT coverage, revision marathons, and shortcut techniques for high rank."
-    : "Comprehensive syllabus coverage, concept notes, numerical solving methods, and live doubt clearance sessions.";
+    if (!isMultiSlide) return;
+
+    if (currentIndex <= 0) {
+      // Jumped to clone of last slide -> snap to real last slide
+      setEnableTransition(false);
+      setCurrentIndex(effectiveCourses.length);
+    } else if (currentIndex >= effectiveCourses.length + 1) {
+      // Jumped to clone of first slide -> snap to real first slide
+      setEnableTransition(false);
+      setCurrentIndex(1);
+    }
+  };
+
+  // Touch swipe support with 2D gesture disambiguation
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+  const touchDeltaXRef = useRef<number>(0);
+  const isSwipingRef = useRef(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMultiSlide) return;
+    setIsPaused(true);
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+    touchDeltaXRef.current = 0;
+    isSwipingRef.current = false;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+    const diffX = e.touches[0].clientX - touchStartXRef.current;
+    const diffY = e.touches[0].clientY - touchStartYRef.current;
+
+    if (!isSwipingRef.current) {
+      if (Math.abs(diffX) > 10 && Math.abs(diffX) > Math.abs(diffY) * 1.25) {
+        isSwipingRef.current = true;
+      } else if (Math.abs(diffY) > 10) {
+        touchStartXRef.current = null;
+        touchStartYRef.current = null;
+        return;
+      }
+    }
+
+    if (isSwipingRef.current) {
+      touchDeltaXRef.current = diffX;
+      setDragOffset(diffX);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsPaused(false);
+    if (touchStartXRef.current === null) return;
+
+    const diffX = touchDeltaXRef.current;
+    const wasSwiping = isSwipingRef.current;
+
+    setDragOffset(0);
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+    touchDeltaXRef.current = 0;
+    isSwipingRef.current = false;
+
+    if (wasSwiping && Math.abs(diffX) > 40) {
+      if (diffX > 0) {
+        handlePrev();
+      } else {
+        handleNext();
+      }
+    }
+  };
+
+  // Dimensions & translation calculations
+  const { gap, slideWidth, centerOffset } = calculateCarouselDimensions(containerWidth);
+  const activeSlidePosition = isMultiSlide ? currentIndex : 1;
+  const trackTranslateX = isMultiSlide
+    ? calculateTrackTranslateX({
+        centerOffset,
+        slideWidth,
+        gap,
+        currentIndex: activeSlidePosition,
+        dragOffset,
+      })
+    : 0;
 
   return (
     <section id="home" className="bg-[#F5F7FA] pt-4 sm:pt-6 pb-10 sm:pb-12 md:pb-16 scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28" aria-label="Hero">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        {/* ── 0. Download Official App CTA Button (Attractive, Centered) ───── */}
+        <div className="flex justify-center mb-5 sm:mb-6">
+          <a
+            href={siteConfig.playStoreUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => trackExternalLink("hero_download_playstore_btn")}
+            className="group relative inline-flex items-center gap-3 px-5 py-2.5 sm:px-6 sm:py-3.5 rounded-2xl bg-slate-900 hover:bg-black text-white shadow-md hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 border border-slate-800 cursor-pointer"
+            aria-label="Download Physics PeP Talk App on Google Play Store"
+          >
+            {/* Google Play 4-color authentic logo */}
+            <div className="w-6 h-6 sm:w-7 sm:h-7 flex-shrink-0 flex items-center justify-center">
+              <svg viewBox="0 0 512 512" className="w-full h-full" aria-hidden="true">
+                <path fill="#4285F4" d="M32.5 28.5L271.8 256 32.5 483.5c-4.2-4.5-6.5-10.7-6.5-17.5V46c0-6.8 2.3-13 6.5-17.5z"/>
+                <path fill="#34A853" d="M351.3 176.5L271.8 256l79.5 79.5 90.2-51.5c14.2-8.1 14.2-21.4 0-29.5l-90.2-78z"/>
+                <path fill="#EA4335" d="M271.8 256L32.5 28.5C36.8 24 43.5 22 51.5 26.5l299.8 170L271.8 256z"/>
+                <path fill="#FBBC04" d="M271.8 256l79.5 79.5L51.5 485.5c-8 4.5-14.7 2.5-19-2L271.8 256z"/>
+              </svg>
+            </div>
+
+            {/* Label & Title */}
+            <div className="text-left leading-tight">
+              <span className="block text-[10px] sm:text-[11px] font-semibold text-slate-300 uppercase tracking-wider">
+                Download Official App
+              </span>
+              <span className="block text-sm sm:text-base font-extrabold text-white tracking-tight group-hover:text-blue-300 transition-colors">
+                Get it on Google Play
+              </span>
+            </div>
+
+            {/* 4.5 Rating badge pill */}
+            <div className="flex items-center gap-1.5 pl-3 border-l border-slate-700">
+              <div className="flex items-center gap-1 bg-amber-400/15 border border-amber-400/30 px-2 py-0.5 rounded-md text-amber-300 text-xs font-bold">
+                <span>{siteConfig.stats.playStoreRating}</span>
+                <span className="text-amber-400 text-xs">★</span>
+              </div>
+              <svg
+                className="w-4 h-4 text-slate-400 group-hover:text-white group-hover:translate-x-0.5 transition-all"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+              </svg>
+            </div>
+          </a>
+        </div>
 
         {/* ── 1. Trust Metrics Strip (Coursera Institutional Proof) ────────── */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 bg-white border border-gray-200/80 rounded-xl p-3 sm:px-6 mb-5 sm:mb-6 shadow-xs text-center sm:text-left">
@@ -581,209 +773,170 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
           </a>
         </div>
 
-        {/* ── 2. Dual Showcase Banners (Exact Coursera Layout, Only from GID 0, Auto Moving) ── */}
+        {/* ── 2. Scrollable Showcase Banners Track (2 on Desktop, 1 on Mobile) ── */}
         <div
-          className="relative group mb-4 touch-pan-y"
+          ref={containerRef}
+          className="relative w-full overflow-hidden mb-4 select-none group touch-pan-y"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
           onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+          aria-roledescription="carousel"
+          aria-label="Course Highlights Carousel"
         >
           {loadingCourses ? (
-            <div className="grid lg:grid-cols-2 gap-5 items-stretch animate-pulse">
-              <div className="rounded-2xl md:rounded-3xl bg-[#00388D] p-5 sm:p-8 min-h-[280px] sm:min-h-[320px] flex flex-col justify-between">
+            <div className="w-full flex justify-center py-2">
+              <div
+                style={{ width: slideWidth > 0 ? `${slideWidth}px` : "100%" }}
+                className="rounded-2xl md:rounded-3xl bg-gradient-to-br from-[#00255D] to-[#0056D2] p-6 sm:p-8 md:p-10 min-h-[220px] sm:min-h-[240px] md:min-h-[260px] animate-pulse flex flex-col justify-between"
+              >
                 <div className="space-y-4">
-                  <div className="h-5 bg-white/20 rounded w-32" />
-                  <div className="h-8 bg-white/20 rounded w-3/4" />
+                  <div className="h-8 bg-white/20 rounded-lg w-3/4" />
                   <div className="h-4 bg-white/15 rounded w-1/2" />
                 </div>
-                <div className="h-10 bg-white/20 rounded w-28 mt-8" />
-              </div>
-              <div className="rounded-2xl md:rounded-3xl bg-[#181818] p-5 sm:p-8 min-h-[280px] sm:min-h-[320px] flex flex-col justify-between">
-                <div className="space-y-4">
-                  <div className="h-5 bg-white/10 rounded w-32" />
-                  <div className="h-8 bg-white/10 rounded w-3/4" />
-                  <div className="h-4 bg-white/5 rounded w-1/2" />
+                <div className="flex items-center justify-end pt-4 border-t border-white/15">
+                  <div className="h-9 bg-white/30 rounded-lg w-28" />
                 </div>
-                <div className="h-10 bg-white/20 rounded w-28 mt-8" />
               </div>
             </div>
           ) : (
-            <div className="grid lg:grid-cols-2 gap-5 items-stretch">
+            <div
+              ref={trackRef}
+              onTransitionEnd={handleTransitionEnd}
+              style={{
+                transform: `translate3d(${trackTranslateX}px, 0, 0)`,
+                transition: enableTransition && dragOffset === 0
+                  ? "transform 500ms cubic-bezier(0.25, 1, 0.5, 1)"
+                  : "none",
+                gap: `${gap}px`,
+              }}
+              className="flex items-stretch will-change-transform py-2"
+            >
+              {extendedCourses.map((slideCourse, extIdx) => {
+                const realIdx = isMultiSlide
+                  ? ((extIdx - 1) % effectiveCourses.length + effectiveCourses.length) % effectiveCourses.length
+                  : 0;
+                const theme = THEMES[realIdx % THEMES.length];
+                const description = slideCourse?.description?.trim() || "PUC & KCET Preparation Program";
+                const courseUrl = slideCourse?.courseUrl?.trim() || "";
+                const thumbnailUrl = slideCourse?.thumbnailUrl?.trim() || "";
 
-              {/* Banner 1: Deep Navy Coursera Plus / Fastrack Batch Banner */}
-              <div className="relative rounded-2xl md:rounded-3xl bg-gradient-to-br from-[#00255D] via-[#00388D] to-[#0056D2] text-white p-5 sm:p-8 flex flex-col justify-between overflow-hidden shadow-md min-h-[280px] sm:min-h-[320px]">
-                {/* Background decorative pattern */}
-                <div className="absolute right-0 bottom-0 w-60 h-60 bg-white/5 rounded-full blur-2xl pointer-events-none" />
+                return (
+                  <div
+                    key={`${courseUrl || description}-${extIdx}`}
+                    style={{
+                      width: slideWidth > 0 ? `${slideWidth}px` : "100%",
+                      flexShrink: 0,
+                    }}
+                    className="transition-all duration-300 ease-out"
+                    role="group"
+                    aria-roledescription="slide"
+                    aria-label={`Slide ${realIdx + 1} of ${effectiveCourses.length}: ${description}`}
+                  >
+                    <div
+                      className={`relative rounded-2xl md:rounded-3xl ${theme.bg} text-white p-5 sm:p-6 md:p-7 overflow-hidden h-full min-h-[220px] sm:min-h-[240px] md:min-h-[260px] flex flex-col justify-between border ${theme.border} shadow-md`}
+                    >
+                      {/* Decorative glowing gradient orbs */}
+                      <div className={`absolute -right-12 -bottom-12 w-72 h-72 ${theme.glow} rounded-full blur-3xl pointer-events-none`} />
+                      <div className="absolute right-1/3 top-0 w-44 h-44 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 
-                <div key={`${slideIndex}-b1`} className="carousel-slide-fade relative z-10 flex flex-col justify-between flex-1">
-                  <div>
-                    {/* Badge */}
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded text-[11px] font-extrabold tracking-wider uppercase">
-                        Physics Pep Talk PLUS
-                      </span>
-                      <span className="bg-amber-400 text-slate-900 px-2 py-0.5 rounded text-[10px] font-bold">
-                        2027 Admissions
-                      </span>
-                    </div>
+                      {/* Content: ONLY description from Google Sheet & Thumbnail */}
+                      <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6 flex-1">
+                        <div className="flex-1 min-w-0 pr-0 sm:pr-2">
+                          <h2 className="text-base sm:text-xl md:text-2xl font-extrabold tracking-tight text-white leading-snug">
+                            {description}
+                          </h2>
+                        </div>
 
-                    {/* Headline & Responsive Thumbnail */}
-                    <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-5">
-                      <div className="flex-1 min-w-0">
-                        <h2 className="text-lg sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white mb-2 leading-tight">
-                          {banner1Course?.description || "KCET 2027 PCM FASTRACK BATCH"}
-                        </h2>
-
-                        <p className="text-xs sm:text-sm text-blue-100 max-w-md leading-relaxed mb-3 sm:mb-4">
-                          {b1Subtitle}
-                        </p>
+                        {thumbnailUrl ? (
+                          <div className="w-full sm:w-44 md:w-52 lg:w-56 aspect-[16/9] sm:aspect-video rounded-xl overflow-hidden bg-white/10 p-1 border border-white/20 shadow-md flex-shrink-0 self-center sm:self-auto">
+                            <img
+                              src={thumbnailUrl}
+                              alt={description}
+                              className="w-full h-full object-cover rounded-lg"
+                              loading="eager"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-full sm:w-44 md:w-52 lg:w-56 aspect-[16/9] sm:aspect-video rounded-xl bg-white/10 backdrop-blur-xs p-3 border border-white/15 shadow-md flex-shrink-0 self-center sm:self-auto flex flex-col justify-between">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] uppercase font-bold text-white/70 tracking-wider">Physics Pep Talk</span>
+                              <span className="text-xs font-bold text-amber-300">★ 4.9</span>
+                            </div>
+                            <div className="text-center py-1">
+                              <div className="text-2xl mb-1">⚡</div>
+                              <p className="text-[11px] font-bold text-white leading-tight line-clamp-1">{description}</p>
+                            </div>
+                            <div className="text-[9px] text-white/60 text-center font-medium">Karnataka PUC &amp; KCET</div>
+                          </div>
+                        )}
                       </div>
 
-                      {banner1Course?.thumbnailUrl && (
-                        <div className="w-full sm:w-44 md:w-48 lg:w-52 xl:w-56 aspect-[16/9] sm:aspect-video rounded-xl overflow-hidden bg-white/10 p-1 border border-white/20 shadow-lg flex-shrink-0 mb-3 sm:mb-0 self-center">
-                          <img
-                            src={banner1Course.thumbnailUrl}
-                            alt={banner1Course.description}
-                            className="w-full h-full object-cover rounded-lg"
-                            loading="eager"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Banner Footer & Action */}
-                  <div className="pt-4 flex items-center justify-between gap-4 border-t border-white/15 mt-3 sm:mt-4">
-                    <div>
-                      <span className="text-[10px] text-blue-200 block uppercase font-semibold">Special Admission Pass</span>
-                      <span className="text-base sm:text-lg font-bold text-amber-300">
-                        {b1DescLower.includes("counselling") ? "Dhrona 2027" : "Fastrack 2027"}
-                      </span>
-                    </div>
-
-                    {banner1Course?.courseUrl ? (
-                      <a
-                        href={banner1Course.courseUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => trackCTAClick(`coursera_hero_banner_1_${banner1Course.description}`)}
-                        className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-md font-bold text-xs text-[#0056D2] bg-white hover:bg-blue-50 shadow-sm transition-all"
-                      >
-                        <span>Enroll now</span>
-                        <ArrowRightIcon className="w-3.5 h-3.5" />
-                      </a>
-                    ) : (
-                      <a
-                        href={buildWhatsAppUrl()}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-md font-bold text-xs text-[#0056D2] bg-white hover:bg-blue-50 shadow-sm"
-                      >
-                        <span>Inquire now</span>
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Banner 2: Dark Coursera AI / Series Banner */}
-              <div className="relative rounded-2xl md:rounded-3xl bg-[#121212] text-white p-5 sm:p-8 flex flex-col justify-between overflow-hidden shadow-md min-h-[280px] sm:min-h-[320px]">
-                <div key={`${slideIndex}-b2`} className="carousel-slide-fade relative z-10 flex flex-col justify-between flex-1">
-                  <div>
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2.5 py-0.5 rounded text-[11px] font-extrabold tracking-wider uppercase">
-                        {b2DescLower.includes("counselling") ? "⭐ Counselling Series" : "⭐ Featured Batch"}
-                      </span>
-                      <span className="text-[11px] text-neutral-400">
-                        {b2DescLower.includes("counselling") ? "KCET & COMEDK" : "Karnataka PUC & KCET"}
-                      </span>
-                    </div>
-
-                    {/* Headline & Responsive Thumbnail */}
-                    <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-5">
-                      <div className="flex-1 min-w-0">
-                        <h2 className="text-lg sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white mb-2 leading-tight">
-                          {banner2Course?.description || "Dhrona 2027 Counselling & Choice Filling Guidance"}
-                        </h2>
-
-                        <p className="text-xs sm:text-sm text-neutral-300 max-w-md leading-relaxed mb-3 sm:mb-4">
-                          {b2Subtitle}
-                        </p>
+                      {/* Banner Action CTA */}
+                      <div className="relative z-10 pt-4 flex items-center justify-end border-t border-white/15 mt-3 sm:mt-4">
+                        {courseUrl ? (
+                          <a
+                            href={courseUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              trackCTAClick(`hero_banner_${description}`);
+                            }}
+                            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-xs shadow-sm transition-all hover:shadow-md active:scale-95 cursor-pointer ${theme.btnClass}`}
+                          >
+                            <span>Enroll now</span>
+                            <ArrowRightIcon className="w-3.5 h-3.5" />
+                          </a>
+                        ) : (
+                          <a
+                            href={buildWhatsAppUrl()}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => e.stopPropagation()}
+                            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-xs shadow-sm transition-all hover:shadow-md active:scale-95 cursor-pointer ${theme.btnClass}`}
+                          >
+                            <span>Inquire now</span>
+                            <ArrowRightIcon className="w-3.5 h-3.5" />
+                          </a>
+                        )}
                       </div>
-
-                      {banner2Course?.thumbnailUrl && (
-                        <div className="w-full sm:w-44 md:w-48 lg:w-52 xl:w-56 aspect-[16/9] sm:aspect-video rounded-xl overflow-hidden bg-white/5 p-1 border border-white/10 shadow-lg flex-shrink-0 mb-3 sm:mb-0 self-center">
-                          <img
-                            src={banner2Course.thumbnailUrl}
-                            alt={banner2Course.description}
-                            className="w-full h-full object-cover rounded-lg"
-                            loading="eager"
-                          />
-                        </div>
-                      )}
                     </div>
                   </div>
-
-                  {/* Banner 2 Direct Action */}
-                  <div className="pt-4 flex items-center justify-between gap-4 border-t border-white/10 mt-3 sm:mt-4">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                      <span className="text-xs font-semibold text-neutral-300">
-                        {b2DescLower.includes("counselling") ? "1,000+ Students Mentored" : "5,000+ Students Enrolled"}
-                      </span>
-                    </div>
-
-                    {banner2Course?.courseUrl ? (
-                      <a
-                        href={banner2Course.courseUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => trackCTAClick(`coursera_hero_banner_2_${banner2Course.description}`)}
-                        className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-md font-bold text-xs text-neutral-900 bg-white hover:bg-neutral-100 shadow-sm transition-all"
-                      >
-                        <span>{b2DescLower.includes("counselling") ? "Get started" : "Enroll now"}</span>
-                        <ArrowRightIcon className="w-3.5 h-3.5" />
-                      </a>
-                    ) : (
-                      <a
-                        href={buildWhatsAppUrl()}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-md font-bold text-xs text-neutral-900 bg-white hover:bg-neutral-100 shadow-sm transition-all"
-                      >
-                        <span>Get started</span>
-                        <ArrowRightIcon className="w-3.5 h-3.5" />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              </div>
-
+                );
+              })}
             </div>
           )}
 
           {/* Coursera Next & Prev Arrows */}
-          {courses.length > 1 && (
+          {isMultiSlide && (
             <>
               <button
                 type="button"
-                onClick={handlePrev}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePrev();
+                }}
                 aria-label="Previous course slide"
-                className="absolute left-1 sm:-left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white text-gray-800 shadow-md hover:shadow-lg border border-gray-200 flex items-center justify-center transition-all opacity-95 sm:opacity-0 sm:group-hover:opacity-100 hover:scale-105 focus:opacity-100 cursor-pointer touch-manipulation before:absolute before:-inset-2 before:content-['']"
+                className="hidden sm:flex absolute left-2 sm:left-4 md:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white text-gray-800 shadow-md hover:shadow-xl border border-gray-200/90 items-center justify-center transition-all opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 focus:opacity-100 cursor-pointer touch-manipulation"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
 
               <button
                 type="button"
-                onClick={handleNext}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNext();
+                }}
                 aria-label="Next course slide"
-                className="absolute right-1 sm:-right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white text-gray-800 shadow-md hover:shadow-lg border border-gray-200 flex items-center justify-center transition-all opacity-95 sm:opacity-0 sm:group-hover:opacity-100 hover:scale-105 focus:opacity-100 cursor-pointer touch-manipulation before:absolute before:-inset-2 before:content-['']"
+                className="hidden sm:flex absolute right-2 sm:right-4 md:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white text-gray-800 shadow-md hover:shadow-xl border border-gray-200/90 items-center justify-center transition-all opacity-0 group-hover:opacity-100 hover:scale-105 active:scale-95 focus:opacity-100 cursor-pointer touch-manipulation"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
@@ -798,12 +951,12 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
             role="tablist"
             aria-label="Course carousel navigation"
           >
-            {(courses.length > 0 ? courses : [1, 2, 3]).map((item, idx) => {
+            {effectiveCourses.map((item, idx) => {
               const isActive = idx === activeIndex;
-              const label = typeof item === "object" ? item.description : `Slide ${idx + 1}`;
+              const label = item.description || `Slide ${idx + 1}`;
               return (
                 <button
-                  key={typeof item === "object" ? item.courseUrl || idx : idx}
+                  key={item.courseUrl || idx}
                   type="button"
                   role="tab"
                   aria-selected={isActive}
@@ -828,295 +981,12 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
                     /* Inactive indicator: sleek dot */
                     <span
                       className="w-2.5 h-2.5 rounded-full bg-gray-300 group-hover:bg-gray-400 group-hover:scale-125 transition-all duration-300"
+                      title={`Go to slide ${idx + 1}`}
                     />
                   )}
                 </button>
               );
             })}
-          </div>
-        </div>
-
-        {/* ── 3. COURSERA "NEW AND POPULAR" 3-COLUMN COURSE GRID ───────────── */}
-        {/* Exactly matching the 3-column card list in user's Coursera screenshot */}
-        <div className="mt-8">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-                New and popular
-              </h2>
-              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
-                Explore our top-enrolled courses, fastrack batches, and student success stories.
-              </p>
-            </div>
-            <a
-              href="#courses"
-              className="text-xs font-bold text-[#0056D2] hover:underline flex items-center gap-1"
-            >
-              <span>Explore all courses</span>
-              <ArrowRightIcon className="w-3.5 h-3.5" />
-            </a>
-          </div>
-
-          {/* 3 Columns */}
-          <div className="grid md:grid-cols-3 gap-5">
-
-            {/* Column 1: Most popular */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <a href="#courses" className="text-sm font-bold text-gray-900 hover:text-[#0056D2] flex items-center gap-1">
-                  <span>Most popular</span>
-                  <ArrowRightIcon className="w-3.5 h-3.5 text-gray-400" />
-                </a>
-              </div>
-
-              {/* Skeletons while loading */}
-              {loadingCourses && (
-                <div className="p-3 rounded-xl bg-white border border-gray-200 animate-pulse flex gap-3">
-                  <div className="w-14 h-14 bg-gray-200 rounded-lg flex-shrink-0" />
-                  <div className="flex-1 space-y-2 py-1">
-                    <div className="h-3 bg-gray-200 rounded w-1/3" />
-                    <div className="h-3 bg-gray-200 rounded w-4/5" />
-                  </div>
-                </div>
-              )}
-
-              {/* Course Card 1 */}
-              {featuredCourse && (
-                <a
-                  href={featuredCourse.courseUrl || "#courses"}
-                  target={featuredCourse.courseUrl ? "_blank" : undefined}
-                  rel="noopener noreferrer"
-                  className="group flex items-start gap-3 p-3 rounded-xl bg-white border border-gray-200/90 hover:border-[#0056D2] hover:shadow-md transition-all block"
-                >
-                  <img
-                    src={featuredCourse.thumbnailUrl}
-                    alt={featuredCourse.description}
-                    className="w-14 h-14 rounded-lg object-cover flex-shrink-0 bg-gray-100"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Physics Pep Talk
-                    </span>
-                    <h3 className="text-xs font-bold text-gray-900 line-clamp-1 group-hover:text-[#0056D2] transition-colors">
-                      {featuredCourse.description}
-                    </h3>
-                    <div className="flex items-center gap-1 mt-1 text-[11px] text-gray-600">
-                      <span>Fastrack Batch</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-0.5 font-bold text-gray-900">
-                        <StarIcon /> 4.9
-                      </span>
-                    </div>
-                  </div>
-                </a>
-              )}
-
-              {/* Course Card 2 */}
-              {secondCourse && (
-                <a
-                  href={secondCourse.courseUrl || "#courses"}
-                  target={secondCourse.courseUrl ? "_blank" : undefined}
-                  rel="noopener noreferrer"
-                  className="group flex items-start gap-3 p-3 rounded-xl bg-white border border-gray-200/90 hover:border-[#0056D2] hover:shadow-md transition-all block"
-                >
-                  <img
-                    src={secondCourse.thumbnailUrl}
-                    alt={secondCourse.description}
-                    className="w-14 h-14 rounded-lg object-cover flex-shrink-0 bg-gray-100"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Physics Pep Talk
-                    </span>
-                    <h3 className="text-xs font-bold text-gray-900 line-clamp-1 group-hover:text-[#0056D2] transition-colors">
-                      {secondCourse.description}
-                    </h3>
-                    <div className="flex items-center gap-1 mt-1 text-[11px] text-gray-600">
-                      <span>Board + KCET</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-0.5 font-bold text-gray-900">
-                        <StarIcon /> 4.8
-                      </span>
-                    </div>
-                  </div>
-                </a>
-              )}
-
-              {/* Course Card 3 */}
-              <a
-                href={links?.boardsCourses || "https://physicspeptalk.com"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-start gap-3 p-3 rounded-xl bg-white border border-gray-200/90 hover:border-[#0056D2] hover:shadow-md transition-all block"
-              >
-                <div className="w-14 h-14 rounded-lg bg-blue-50 border border-blue-200/60 flex items-center justify-center text-xl flex-shrink-0">
-                  📚
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block">
-                    Karnataka PUC
-                  </span>
-                  <h3 className="text-xs font-bold text-gray-900 line-clamp-1 group-hover:text-[#0056D2] transition-colors">
-                    2nd PUC Physics Complete Theory &amp; Numericals
-                  </h3>
-                  <div className="flex items-center gap-1 mt-1 text-[11px] text-gray-600">
-                    <span>Complete Course</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-0.5 font-bold text-gray-900">
-                      <StarIcon /> 4.9
-                    </span>
-                  </div>
-                </div>
-              </a>
-            </div>
-
-            {/* Column 2: Hot new releases */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <a href="#categories" className="text-sm font-bold text-gray-900 hover:text-[#0056D2] flex items-center gap-1">
-                  <span>Hot new releases</span>
-                  <ArrowRightIcon className="w-3.5 h-3.5 text-gray-400" />
-                </a>
-              </div>
-
-              {/* Release Card 1 */}
-              <a
-                href={links?.counsellingEnrollment || "https://counselling.physicspeptalk.com/kcet/"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-start gap-3 p-3 rounded-xl bg-white border border-gray-200/90 hover:border-[#0056D2] hover:shadow-md transition-all block"
-              >
-                <div className="w-14 h-14 rounded-lg bg-indigo-50 border border-indigo-200/60 flex items-center justify-center text-xl flex-shrink-0">
-                  🧭
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block">
-                    KCET &amp; COMEDK
-                  </span>
-                  <h3 className="text-xs font-bold text-gray-900 line-clamp-1 group-hover:text-[#0056D2] transition-colors">
-                    Dhrona 2027 Diamond Counselling
-                  </h3>
-                  <div className="flex items-center gap-1 mt-1 text-[11px] text-gray-600">
-                    <span>Option Entry Batch</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-0.5 font-bold text-gray-900">
-                      <StarIcon /> 5.0
-                    </span>
-                  </div>
-                </div>
-              </a>
-
-              {/* Release Card 2 */}
-              <a
-                href={links?.kcetComedkCourses || "https://physicspeptalk.com"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-start gap-3 p-3 rounded-xl bg-white border border-gray-200/90 hover:border-[#0056D2] hover:shadow-md transition-all block"
-              >
-                <div className="w-14 h-14 rounded-lg bg-amber-50 border border-amber-200/60 flex items-center justify-center text-xl flex-shrink-0">
-                  🎯
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block">
-                    Competitive Prep
-                  </span>
-                  <h3 className="text-xs font-bold text-gray-900 line-clamp-1 group-hover:text-[#0056D2] transition-colors">
-                    PUC PCM Formula &amp; Derivation Revision
-                  </h3>
-                  <div className="flex items-center gap-1 mt-1 text-[11px] text-gray-600">
-                    <span>Quick Revision</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-0.5 font-bold text-gray-900">
-                      <StarIcon /> {siteConfig.stats.playStoreRating}
-                    </span>
-                  </div>
-                </div>
-              </a>
-
-              {/* Release Card 3 */}
-              <a
-                href={siteConfig.playStoreUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-start gap-3 p-3 rounded-xl bg-white border border-gray-200/90 hover:border-[#0056D2] hover:shadow-md transition-all block"
-              >
-                <div className="w-14 h-14 rounded-lg bg-emerald-50 border border-emerald-200/60 flex items-center justify-center text-emerald-600 text-xl flex-shrink-0">
-                  <PlayStoreIcon className="w-7 h-7" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block">
-                    Android Mobile App
-                  </span>
-                  <h3 className="text-xs font-bold text-gray-900 line-clamp-1 group-hover:text-[#0056D2] transition-colors">
-                    PhysicsPePTalk - KCET, NEET
-                  </h3>
-                  <div className="flex items-center gap-1 mt-1 text-[11px] text-gray-600">
-                    <span>Google Play</span>
-                    <span>•</span>
-                    <span className="flex items-center gap-0.5 font-bold text-gray-900">
-                      <StarIcon /> {siteConfig.stats.playStoreRating}
-                    </span>
-                  </div>
-                </div>
-              </a>
-            </div>
-
-            {/* Column 3: Student Success Stories */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <a href="#feedback" className="text-sm font-bold text-gray-900 hover:text-[#0056D2] flex items-center gap-1">
-                  <span>Student Success Stories</span>
-                  <ArrowRightIcon className="w-3.5 h-3.5 text-gray-400" />
-                </a>
-              </div>
-
-              {/* Review 1 */}
-              {testimonials.slice(0, 3).map((t, idx) => (
-                <article
-                  key={t.youtubeUrl || idx}
-                  className="flex items-start gap-3 p-3 rounded-xl bg-white border border-gray-200/90 hover:border-[#0056D2] hover:shadow-md transition-all"
-                >
-                  <div className="relative w-14 h-14 rounded-lg bg-black overflow-hidden flex-shrink-0">
-                    <img
-                      src={t.thumbnailUrl}
-                      alt={t.caption || "Student review"}
-                      className="w-full h-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        trackVideoPlay(t.caption || t.youtubeUrl);
-                        window.open(t.youtubeUrl, "_blank");
-                      }}
-                      className="absolute inset-0 bg-black/30 hover:bg-black/10 flex items-center justify-center transition-colors"
-                      aria-label="Play testimonial"
-                    >
-                      <span className="w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center shadow-xs">
-                        <svg className="w-2.5 h-2.5 fill-current translate-x-px" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z" />
-                        </svg>
-                      </span>
-                    </button>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider block">
-                      Dhrona Batch Review
-                    </span>
-                    <h3 className="text-xs font-bold text-gray-900 line-clamp-1">
-                      {t.caption || "Student feedback on preparation"}
-                    </h3>
-                    <div className="flex items-center gap-1 mt-1 text-[11px] text-emerald-600 font-semibold">
-                      <span>Verified Review</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-0.5 text-gray-900">
-                        <StarIcon /> 5.0
-                      </span>
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-
           </div>
         </div>
 
@@ -1651,8 +1521,6 @@ export default function App() {
   const [loadingTestimonials, setLoadingTestimonials] = useState(true);
   const [testimonialsError, setTestimonialsError] = useState<string | null>(null);
 
-  const [resourceLinks, setResourceLinks] = useState<ResourceLinks | null>(null);
-
   useEffect(() => {
     let cancelled = false;
 
@@ -1670,10 +1538,6 @@ export default function App() {
         setTestimonialsError(e);
         setLoadingTestimonials(false);
       }
-    });
-
-    fetchResourceLinks().then((l) => {
-      if (!cancelled) setResourceLinks(l);
     });
 
     return () => {
@@ -1709,11 +1573,9 @@ export default function App() {
       <main id="main-content" className="flex-1">
         {route.page === "home" && (
           <>
-            {/* Coursera Hero Carousel Banners & "New and Popular" Section */}
+            {/* Coursera Hero Carousel Banners */}
             <Hero
               courses={courses}
-              testimonials={testimonials}
-              links={resourceLinks}
               loadingCourses={loadingCourses}
             />
 
