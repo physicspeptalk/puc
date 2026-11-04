@@ -10,11 +10,11 @@
  *     • Most popular courses (with thumbnail, star rating, partner tag, and direct links)
  *     • Hot new releases & entrance batches
  *     • Student success stories & video feedback
- * - Trust metrics: 5,000+ Paid Students, 1,000+ Counselled Students, 4.8★ Play Store Rating.
+ * - Trust metrics: 5,000+ Paid Students, 1,000+ Counselled Students, 4.5★ Play Store Rating.
  * - Preserves all business logic, Google Sheets live fetching, and analytics.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import peptalkLogo from "./assets/peptalklogo.png";
 import {
   siteConfig,
@@ -42,6 +42,7 @@ import {
 import BlogListingPage from "./components/BlogListingPage";
 import BlogArticlePage from "./components/BlogArticlePage";
 import FacultiesPage from "./components/FacultiesPage";
+import LandingQuickNav from "./components/LandingQuickNav";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -133,14 +134,6 @@ function ArrowRightIcon({ className = "w-4 h-4" }: { className?: string }) {
   );
 }
 
-function SearchIcon({ className = "w-4 h-4" }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-4.35-4.35M17 10a7 7 0 11-14 0 7 7 0 0114 0z" />
-    </svg>
-  );
-}
-
 function ExternalIcon({ className = "w-3 h-3" }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -217,7 +210,7 @@ function CourseraTopBar() {
             className="text-neutral-300 hover:text-white flex items-center gap-1"
           >
             <PlayStoreIcon className="w-3 h-3 text-amber-400" />
-            4.8 ★ Play Store
+            {siteConfig.stats.playStoreRating} ★ Play Store
           </a>
         </div>
       </div>
@@ -226,54 +219,73 @@ function CourseraTopBar() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// COURSERA MAIN HEADER (White Navbar + Search Bar + Coursera Blue Action)
+// COURSERA MAIN HEADER (White Navbar + Navigation + Coursera Blue Action)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
 
   const close = () => setMenuOpen(false);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const el = document.getElementById("courses");
-    if (el) el.scrollIntoView({ behavior: "smooth" });
-  };
+  // Lock body scroll and handle Escape key while mobile menu is open
+  useEffect(() => {
+    if (!menuOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [menuOpen]);
 
   return (
     <header className="sticky top-0 inset-x-0 z-50 bg-white border-b border-gray-200 shadow-xs" role="banner">
       <CourseraTopBar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 md:h-18 gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16 md:h-18 gap-3 sm:gap-4">
         {/* Brand & Explore Dropdown */}
-        <div className="flex items-center gap-4 lg:gap-6 flex-shrink-0">
+        <div className="flex items-center gap-3 lg:gap-6 flex-shrink-0">
           <a
-            href="#home"
-            className="flex items-center gap-2.5 group"
+            href="/"
+            onClick={(e) => {
+              if (window.location.pathname === "/" || window.location.pathname === "") {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: "smooth" });
+                if (window.location.hash) {
+                  history.pushState(null, "", "/");
+                }
+              }
+            }}
+            className="flex items-center gap-2 sm:gap-2.5 group"
             aria-label={`${siteConfig.brandName} home`}
           >
             <img
               src={peptalkLogo}
               alt="Physics Pep Talk logo"
-              className="h-8 w-8 md:h-9 md:w-9 rounded-md object-cover shadow-xs"
+              className="h-8 w-8 md:h-9 md:w-9 rounded-md object-cover shadow-xs flex-shrink-0"
               width="36"
               height="36"
             />
-            <div className="leading-tight">
-              <span className="font-extrabold text-[#0056D2] text-lg md:text-xl tracking-tight">
+            <div className="leading-tight min-w-0">
+              <span className="font-extrabold text-[#0056D2] text-sm sm:text-lg md:text-xl tracking-tight block truncate">
                 {siteConfig.brandName}
               </span>
-              <span className="hidden sm:block text-[10px] text-gray-500 font-semibold tracking-wider uppercase">
+              <span className="hidden sm:block text-[10px] text-gray-500 font-semibold tracking-wider uppercase truncate">
                 {siteConfig.tagline}
               </span>
             </div>
           </a>
 
-          {/* Coursera "Explore ▾" Button */}
+          {/* Coursera "Explore ▾" Button & Nav Links */}
           <div className="hidden lg:flex items-center gap-2">
             <a
-              href="#courses"
+              href="/#courses"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold text-[#0056D2] border border-[#0056D2] hover:bg-blue-50 transition-colors"
             >
               <span>Explore</span>
@@ -291,29 +303,8 @@ function Header() {
           </div>
         </div>
 
-        {/* Coursera Central Search Bar */}
-        <form
-          onSubmit={handleSearchSubmit}
-          className="hidden md:flex flex-1 max-w-md mx-2 relative items-center"
-        >
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="What do you want to learn? (KCET, PUC, COMEDK...)"
-            className="w-full pl-4 pr-11 py-2 text-xs rounded-full border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#0056D2] focus:border-transparent transition-all shadow-2xs"
-          />
-          <button
-            type="submit"
-            aria-label="Search courses"
-            className="absolute right-1 w-7 h-7 rounded-full bg-[#0056D2] hover:bg-[#00419e] text-white flex items-center justify-center transition-colors shadow-xs"
-          >
-            <SearchIcon className="w-3.5 h-3.5" />
-          </button>
-        </form>
-
         {/* Right CTA Actions */}
-        <div className="flex items-center gap-2.5 sm:gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           <a
             href={buildPhoneUrl()}
             onClick={() => trackCallClick("header")}
@@ -330,7 +321,8 @@ function Header() {
             className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-md text-xs font-bold text-white bg-[#0056D2] hover:bg-[#00419e] shadow-xs transition-colors"
           >
             <WaIcon className="w-3.5 h-3.5" />
-            <span>Join for Free</span>
+            <span className="hidden sm:inline">Join for Free</span>
+            <span className="sm:hidden">Join</span>
           </a>
 
           {/* Mobile hamburger */}
@@ -339,7 +331,7 @@ function Header() {
             onClick={() => setMenuOpen((v) => !v)}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
-            className="lg:hidden p-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors"
+            className="lg:hidden p-2 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
           >
             {menuOpen ? (
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -354,48 +346,72 @@ function Header() {
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer with Backdrop */}
       {menuOpen && (
-        <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-4 shadow-lg">
-          <nav className="flex flex-col gap-1">
-            {navLinks.map((link) => {
-              const isExternal = "external" in link && link.external;
-              return (
+        <div className="lg:hidden fixed inset-x-0 bottom-0 top-16 md:top-[108px] z-50 flex flex-col" role="dialog" aria-modal="true">
+          {/* Soft Dim Backdrop */}
+          <div
+            className="fixed inset-x-0 bottom-0 top-16 md:top-[108px] bg-black/50 backdrop-blur-xs transition-opacity"
+            onClick={close}
+            aria-hidden="true"
+          />
+
+          {/* Drawer Menu Panel */}
+          <div className="relative bg-white border-b border-gray-200 px-4 py-5 shadow-2xl z-10 max-h-[calc(100vh-4rem)] md:max-h-[calc(100vh-108px)] overflow-y-auto overscroll-contain animate-in fade-in slide-in-from-top-2 duration-200">
+            <nav className="flex flex-col gap-1.5" aria-label="Mobile Navigation">
+              {navLinks.map((link) => {
+                const isExternal = "external" in link && link.external;
+                const isActive = typeof window !== "undefined" && (
+                  link.href === window.location.pathname ||
+                  (link.href.startsWith("/#") && window.location.hash === link.href.slice(1))
+                );
+                return (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    {...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                    onClick={close}
+                    className={`px-3.5 py-3 min-h-[44px] rounded-xl text-sm font-semibold transition-colors flex items-center justify-between ${
+                      isActive
+                        ? "bg-blue-50 text-[#0056D2] font-bold border-l-3 border-[#0056D2]"
+                        : "text-gray-800 hover:text-[#0056D2] hover:bg-gray-50"
+                    }`}
+                  >
+                    <span>{link.label}</span>
+                    {isExternal ? (
+                      <ExternalIcon className="w-3.5 h-3.5 text-gray-400" />
+                    ) : (
+                      <span className="text-xs text-gray-400">→</span>
+                    )}
+                  </a>
+                );
+              })}
+
+              <div className="my-1.5 border-t border-gray-100" />
+              <BlogsAccordionMobile onClose={close} />
+
+              <div className="pt-3 grid grid-cols-2 gap-2.5">
                 <a
-                  key={link.href}
-                  href={link.href}
-                  {...(isExternal ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                  onClick={close}
-                  className="px-3 py-2.5 rounded-md text-sm font-semibold text-gray-700 hover:text-[#0056D2] hover:bg-blue-50 transition-colors flex items-center justify-between"
+                  href={buildPhoneUrl()}
+                  onClick={() => { trackCallClick("mobile"); close(); }}
+                  className="flex items-center justify-center gap-2 px-3 py-3 min-h-[44px] rounded-xl text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200 active:scale-98 transition-all"
                 >
-                  <span>{link.label}</span>
-                  {isExternal && <ExternalIcon className="w-3.5 h-3.5 text-gray-400" />}
+                  <PhoneIcon className="w-4 h-4 text-[#0056D2]" />
+                  <span>Call Us</span>
                 </a>
-              );
-            })}
-            <div className="my-1 border-t border-gray-100" />
-            <BlogsAccordionMobile onClose={close} />
-            <div className="pt-2 grid grid-cols-2 gap-2">
-              <a
-                href={buildPhoneUrl()}
-                onClick={() => { trackCallClick("mobile"); close(); }}
-                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold text-gray-800 bg-gray-100 hover:bg-gray-200"
-              >
-                <PhoneIcon className="w-3.5 h-3.5 text-[#0056D2]" />
-                <span>Call Us</span>
-              </a>
-              <a
-                href={buildWhatsAppUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => { trackWhatsAppClick("mobile"); close(); }}
-                className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-xs font-bold text-white bg-[#0056D2]"
-              >
-                <WaIcon className="w-3.5 h-3.5" />
-                <span>WhatsApp</span>
-              </a>
-            </div>
-          </nav>
+                <a
+                  href={buildWhatsAppUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => { trackWhatsAppClick("mobile"); close(); }}
+                  className="flex items-center justify-center gap-2 px-3 py-3 min-h-[44px] rounded-xl text-xs font-bold text-white bg-[#0056D2] hover:bg-[#00419e] active:scale-98 shadow-xs transition-all"
+                >
+                  <WaIcon className="w-4 h-4" />
+                  <span>WhatsApp</span>
+                </a>
+              </div>
+            </nav>
+          </div>
         </div>
       )}
     </header>
@@ -414,39 +430,106 @@ interface HeroProps {
   loadingCourses: boolean;
 }
 
+const HERO_SLIDE_DURATION_MS = 5000;
+
 function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
   const featuredCourse = courses[0] || null;
   const secondCourse = courses[1] || courses[0] || null;
 
   const [slideIndex, setSlideIndex] = useState(0);
+  const [progress, setProgress] = useState(0); // 0 to 100%
   const [isPaused, setIsPaused] = useState(false);
 
-  // Auto-advancing continuous slideshow that keeps MOVING
+  const progressRef = useRef(0);
+  const startTimeRef = useRef(0);
+  const isPausedRef = useRef(isPaused);
+
+  useEffect(() => {
+    isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  const activeIndex = courses.length > 0 ? slideIndex % courses.length : 0;
+
+  const goToSlide = useCallback((idx: number) => {
+    setSlideIndex(idx);
+    progressRef.current = 0;
+    setProgress(0);
+    startTimeRef.current = Date.now();
+  }, []);
+
+  const handlePrev = () => {
+    if (courses.length <= 1) return;
+    goToSlide((slideIndex - 1 + courses.length) % courses.length);
+  };
+
+  const handleNext = () => {
+    if (courses.length <= 1) return;
+    goToSlide((slideIndex + 1) % courses.length);
+  };
+
+  // Touch swipe support for mobile with 2D gesture disambiguation
+  const touchStartXRef = useRef<number | null>(null);
+  const touchStartYRef = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+    touchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) return;
+    const diffX = e.changedTouches[0].clientX - touchStartXRef.current;
+    const diffY = e.changedTouches[0].clientY - touchStartYRef.current;
+
+    // Only recognize intentional horizontal swipe: must exceed 40px and dominate vertical scrolling
+    if (Math.abs(diffX) > 40 && Math.abs(diffX) > Math.abs(diffY) * 1.25) {
+      if (diffX > 0) {
+        handlePrev();
+      } else {
+        handleNext();
+      }
+    }
+    touchStartXRef.current = null;
+    touchStartYRef.current = null;
+  };
+
+  // Continuous filling progress bar: slowly fills up and moves to next slide at 100%
   useEffect(() => {
     if (courses.length <= 1) return;
-    const timer = setInterval(() => {
-      if (!isPaused) {
-        setSlideIndex((prev) => (prev + 1) % courses.length);
+
+    startTimeRef.current = Date.now() - (progressRef.current / 100) * HERO_SLIDE_DURATION_MS;
+    let animId: number;
+
+    const tick = () => {
+      if (!isPausedRef.current) {
+        const now = Date.now();
+        const elapsed = now - startTimeRef.current;
+        const pct = Math.min((elapsed / HERO_SLIDE_DURATION_MS) * 100, 100);
+        progressRef.current = pct;
+        setProgress(pct);
+
+        if (pct >= 100) {
+          setSlideIndex((prev) => (prev + 1) % courses.length);
+          progressRef.current = 0;
+          setProgress(0);
+          startTimeRef.current = Date.now();
+        }
+      } else {
+        // While paused on hover, freeze progress smoothly
+        startTimeRef.current = Date.now() - (progressRef.current / 100) * HERO_SLIDE_DURATION_MS;
       }
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [courses.length, isPaused]);
+      animId = requestAnimationFrame(tick);
+    };
+
+    animId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animId);
+  }, [courses.length]);
 
   // Both banners are strictly derived from GID 0 (courses array)
   const banner1Course = courses.length > 0 ? courses[slideIndex % courses.length] : null;
   const banner2Course = courses.length > 1
     ? courses[(slideIndex + 1) % courses.length]
     : banner1Course;
-
-  const handlePrev = () => {
-    if (courses.length <= 1) return;
-    setSlideIndex((prev) => (prev - 1 + courses.length) % courses.length);
-  };
-
-  const handleNext = () => {
-    if (courses.length <= 1) return;
-    setSlideIndex((prev) => (prev + 1) % courses.length);
-  };
 
   const b1DescLower = (banner1Course?.description || "").toLowerCase();
   const b1Subtitle = b1DescLower.includes("counselling")
@@ -463,21 +546,21 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
     : "Comprehensive syllabus coverage, concept notes, numerical solving methods, and live doubt clearance sessions.";
 
   return (
-    <section id="home" className="bg-[#F5F7FA] pt-6 pb-12 md:pb-16" aria-label="Hero">
+    <section id="home" className="bg-[#F5F7FA] pt-4 sm:pt-6 pb-10 sm:pb-12 md:pb-16 scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28" aria-label="Hero">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* ── 1. Trust Metrics Strip (Coursera Institutional Proof) ────────── */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-gray-200/80 rounded-xl p-3 sm:px-6 mb-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 sm:gap-3 bg-white border border-gray-200/80 rounded-xl p-3 sm:px-6 mb-5 sm:mb-6 shadow-xs text-center sm:text-left">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-xs font-bold text-gray-900">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+            <span className="text-[11px] sm:text-xs font-bold text-gray-900">
               {siteConfig.stats.paidStudents} Paid Students Enrolled
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#0056D2]" />
-            <span className="text-xs font-bold text-gray-900">
+            <span className="w-2 h-2 rounded-full bg-[#0056D2] flex-shrink-0" />
+            <span className="text-[11px] sm:text-xs font-bold text-gray-900">
               {siteConfig.stats.counselledStudents} Counselled Students (KCET &amp; COMEDK)
             </span>
           </div>
@@ -487,7 +570,7 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackExternalLink("hero_playstore_strip")}
-            className="flex items-center gap-1.5 text-xs font-bold text-gray-800 hover:text-[#0056D2] transition-colors"
+            className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-gray-800 hover:text-[#0056D2] transition-colors"
           >
             <div className="flex items-center gap-1 text-amber-500">
               <span>{siteConfig.stats.playStoreRating}</span>
@@ -500,13 +583,15 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
 
         {/* ── 2. Dual Showcase Banners (Exact Coursera Layout, Only from GID 0, Auto Moving) ── */}
         <div
-          className="relative group mb-4"
+          className="relative group mb-4 touch-pan-y"
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
         >
           {loadingCourses ? (
             <div className="grid lg:grid-cols-2 gap-5 items-stretch animate-pulse">
-              <div className="rounded-2xl md:rounded-3xl bg-[#00388D] p-6 sm:p-8 min-h-[320px] flex flex-col justify-between">
+              <div className="rounded-2xl md:rounded-3xl bg-[#00388D] p-5 sm:p-8 min-h-[280px] sm:min-h-[320px] flex flex-col justify-between">
                 <div className="space-y-4">
                   <div className="h-5 bg-white/20 rounded w-32" />
                   <div className="h-8 bg-white/20 rounded w-3/4" />
@@ -514,7 +599,7 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
                 </div>
                 <div className="h-10 bg-white/20 rounded w-28 mt-8" />
               </div>
-              <div className="rounded-2xl md:rounded-3xl bg-[#181818] p-6 sm:p-8 min-h-[320px] flex flex-col justify-between">
+              <div className="rounded-2xl md:rounded-3xl bg-[#181818] p-5 sm:p-8 min-h-[280px] sm:min-h-[320px] flex flex-col justify-between">
                 <div className="space-y-4">
                   <div className="h-5 bg-white/10 rounded w-32" />
                   <div className="h-8 bg-white/10 rounded w-3/4" />
@@ -527,147 +612,151 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
             <div className="grid lg:grid-cols-2 gap-5 items-stretch">
 
               {/* Banner 1: Deep Navy Coursera Plus / Fastrack Batch Banner */}
-              <div className="relative rounded-2xl md:rounded-3xl bg-gradient-to-br from-[#00255D] via-[#00388D] to-[#0056D2] text-white p-6 sm:p-8 flex flex-col justify-between overflow-hidden shadow-md min-h-[320px]">
+              <div className="relative rounded-2xl md:rounded-3xl bg-gradient-to-br from-[#00255D] via-[#00388D] to-[#0056D2] text-white p-5 sm:p-8 flex flex-col justify-between overflow-hidden shadow-md min-h-[280px] sm:min-h-[320px]">
                 {/* Background decorative pattern */}
                 <div className="absolute right-0 bottom-0 w-60 h-60 bg-white/5 rounded-full blur-2xl pointer-events-none" />
 
-                <div className="relative z-10">
-                  {/* Badge */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded text-[11px] font-extrabold tracking-wider uppercase">
-                      Physics Pep Talk PLUS
-                    </span>
-                    <span className="bg-amber-400 text-slate-900 px-2 py-0.5 rounded text-[10px] font-bold">
-                      2027 Admissions
-                    </span>
-                  </div>
-
-                  {/* Headline & Optional Thumbnail */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-2 leading-tight transition-opacity duration-300">
-                        {banner1Course?.description || "KCET 2027 PCM FASTRACK BATCH"}
-                      </h2>
-
-                      <p className="text-xs sm:text-sm text-blue-100 max-w-md leading-relaxed mb-6">
-                        {b1Subtitle}
-                      </p>
+                <div key={`${slideIndex}-b1`} className="carousel-slide-fade relative z-10 flex flex-col justify-between flex-1">
+                  <div>
+                    {/* Badge */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded text-[11px] font-extrabold tracking-wider uppercase">
+                        Physics Pep Talk PLUS
+                      </span>
+                      <span className="bg-amber-400 text-slate-900 px-2 py-0.5 rounded text-[10px] font-bold">
+                        2027 Admissions
+                      </span>
                     </div>
 
-                    {banner1Course?.thumbnailUrl && (
-                      <div className="hidden sm:block flex-shrink-0 w-28 h-28 lg:w-32 lg:h-32 rounded-xl overflow-hidden bg-white/10 p-1 border border-white/20 shadow-lg">
-                        <img
-                          src={banner1Course.thumbnailUrl}
-                          alt={banner1Course.description}
-                          className="w-full h-full object-cover rounded-lg"
-                          loading="eager"
-                        />
+                    {/* Headline & Responsive Thumbnail */}
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-5">
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-lg sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white mb-2 leading-tight">
+                          {banner1Course?.description || "KCET 2027 PCM FASTRACK BATCH"}
+                        </h2>
+
+                        <p className="text-xs sm:text-sm text-blue-100 max-w-md leading-relaxed mb-3 sm:mb-4">
+                          {b1Subtitle}
+                        </p>
                       </div>
+
+                      {banner1Course?.thumbnailUrl && (
+                        <div className="w-full sm:w-44 md:w-48 lg:w-52 xl:w-56 aspect-[16/9] sm:aspect-video rounded-xl overflow-hidden bg-white/10 p-1 border border-white/20 shadow-lg flex-shrink-0 mb-3 sm:mb-0 self-center">
+                          <img
+                            src={banner1Course.thumbnailUrl}
+                            alt={banner1Course.description}
+                            className="w-full h-full object-cover rounded-lg"
+                            loading="eager"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Banner Footer & Action */}
+                  <div className="pt-4 flex items-center justify-between gap-4 border-t border-white/15 mt-3 sm:mt-4">
+                    <div>
+                      <span className="text-[10px] text-blue-200 block uppercase font-semibold">Special Admission Pass</span>
+                      <span className="text-base sm:text-lg font-bold text-amber-300">
+                        {b1DescLower.includes("counselling") ? "Dhrona 2027" : "Fastrack 2027"}
+                      </span>
+                    </div>
+
+                    {banner1Course?.courseUrl ? (
+                      <a
+                        href={banner1Course.courseUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => trackCTAClick(`coursera_hero_banner_1_${banner1Course.description}`)}
+                        className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-md font-bold text-xs text-[#0056D2] bg-white hover:bg-blue-50 shadow-sm transition-all"
+                      >
+                        <span>Enroll now</span>
+                        <ArrowRightIcon className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      <a
+                        href={buildWhatsAppUrl()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-md font-bold text-xs text-[#0056D2] bg-white hover:bg-blue-50 shadow-sm"
+                      >
+                        <span>Inquire now</span>
+                      </a>
                     )}
                   </div>
-                </div>
-
-                {/* Banner Footer & Action */}
-                <div className="relative z-10 pt-4 flex items-center justify-between gap-4 border-t border-white/15">
-                  <div>
-                    <span className="text-[10px] text-blue-200 block uppercase font-semibold">Special Admission Pass</span>
-                    <span className="text-lg font-bold text-amber-300">
-                      {b1DescLower.includes("counselling") ? "Dhrona 2027" : "Fastrack 2027"}
-                    </span>
-                  </div>
-
-                  {banner1Course?.courseUrl ? (
-                    <a
-                      href={banner1Course.courseUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => trackCTAClick(`coursera_hero_banner_1_${banner1Course.description}`)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-bold text-xs text-[#0056D2] bg-white hover:bg-blue-50 shadow-sm transition-all"
-                    >
-                      <span>Enroll now</span>
-                      <ArrowRightIcon className="w-3.5 h-3.5" />
-                    </a>
-                  ) : (
-                    <a
-                      href={buildWhatsAppUrl()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-bold text-xs text-[#0056D2] bg-white hover:bg-blue-50 shadow-sm"
-                    >
-                      <span>Inquire now</span>
-                    </a>
-                  )}
                 </div>
               </div>
 
               {/* Banner 2: Dark Coursera AI / Series Banner */}
-              <div className="relative rounded-2xl md:rounded-3xl bg-[#121212] text-white p-6 sm:p-8 flex flex-col justify-between overflow-hidden shadow-md min-h-[320px]">
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2.5 py-0.5 rounded text-[11px] font-extrabold tracking-wider uppercase">
-                      {b2DescLower.includes("counselling") ? "⭐ Counselling Series" : "⭐ Featured Batch"}
-                    </span>
-                    <span className="text-[11px] text-neutral-400">
-                      {b2DescLower.includes("counselling") ? "KCET & COMEDK" : "Karnataka PUC & KCET"}
-                    </span>
-                  </div>
-
-                  {/* Headline & Optional Thumbnail */}
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-2 leading-tight transition-opacity duration-300">
-                        {banner2Course?.description || "Dhrona 2027 Counselling & Choice Filling Guidance"}
-                      </h2>
-
-                      <p className="text-xs sm:text-sm text-neutral-300 max-w-md leading-relaxed mb-6">
-                        {b2Subtitle}
-                      </p>
+              <div className="relative rounded-2xl md:rounded-3xl bg-[#121212] text-white p-5 sm:p-8 flex flex-col justify-between overflow-hidden shadow-md min-h-[280px] sm:min-h-[320px]">
+                <div key={`${slideIndex}-b2`} className="carousel-slide-fade relative z-10 flex flex-col justify-between flex-1">
+                  <div>
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2.5 py-0.5 rounded text-[11px] font-extrabold tracking-wider uppercase">
+                        {b2DescLower.includes("counselling") ? "⭐ Counselling Series" : "⭐ Featured Batch"}
+                      </span>
+                      <span className="text-[11px] text-neutral-400">
+                        {b2DescLower.includes("counselling") ? "KCET & COMEDK" : "Karnataka PUC & KCET"}
+                      </span>
                     </div>
 
-                    {banner2Course?.thumbnailUrl && (
-                      <div className="hidden sm:block flex-shrink-0 w-28 h-28 lg:w-32 lg:h-32 rounded-xl overflow-hidden bg-white/5 p-1 border border-white/10 shadow-lg">
-                        <img
-                          src={banner2Course.thumbnailUrl}
-                          alt={banner2Course.description}
-                          className="w-full h-full object-cover rounded-lg"
-                          loading="eager"
-                        />
+                    {/* Headline & Responsive Thumbnail */}
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-5">
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-lg sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-white mb-2 leading-tight">
+                          {banner2Course?.description || "Dhrona 2027 Counselling & Choice Filling Guidance"}
+                        </h2>
+
+                        <p className="text-xs sm:text-sm text-neutral-300 max-w-md leading-relaxed mb-3 sm:mb-4">
+                          {b2Subtitle}
+                        </p>
                       </div>
+
+                      {banner2Course?.thumbnailUrl && (
+                        <div className="w-full sm:w-44 md:w-48 lg:w-52 xl:w-56 aspect-[16/9] sm:aspect-video rounded-xl overflow-hidden bg-white/5 p-1 border border-white/10 shadow-lg flex-shrink-0 mb-3 sm:mb-0 self-center">
+                          <img
+                            src={banner2Course.thumbnailUrl}
+                            alt={banner2Course.description}
+                            className="w-full h-full object-cover rounded-lg"
+                            loading="eager"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Banner 2 Direct Action */}
+                  <div className="pt-4 flex items-center justify-between gap-4 border-t border-white/10 mt-3 sm:mt-4">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                      <span className="text-xs font-semibold text-neutral-300">
+                        {b2DescLower.includes("counselling") ? "1,000+ Students Mentored" : "5,000+ Students Enrolled"}
+                      </span>
+                    </div>
+
+                    {banner2Course?.courseUrl ? (
+                      <a
+                        href={banner2Course.courseUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => trackCTAClick(`coursera_hero_banner_2_${banner2Course.description}`)}
+                        className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-md font-bold text-xs text-neutral-900 bg-white hover:bg-neutral-100 shadow-sm transition-all"
+                      >
+                        <span>{b2DescLower.includes("counselling") ? "Get started" : "Enroll now"}</span>
+                        <ArrowRightIcon className="w-3.5 h-3.5" />
+                      </a>
+                    ) : (
+                      <a
+                        href={buildWhatsAppUrl()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-4 sm:px-5 py-2.5 rounded-md font-bold text-xs text-neutral-900 bg-white hover:bg-neutral-100 shadow-sm transition-all"
+                      >
+                        <span>Get started</span>
+                        <ArrowRightIcon className="w-3.5 h-3.5" />
+                      </a>
                     )}
                   </div>
-                </div>
-
-                {/* Banner 2 Direct Action */}
-                <div className="relative z-10 pt-4 flex items-center justify-between gap-4 border-t border-white/10">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                    <span className="text-xs font-semibold text-neutral-300">
-                      {b2DescLower.includes("counselling") ? "1,000+ Students Mentored" : "5,000+ Students Enrolled"}
-                    </span>
-                  </div>
-
-                  {banner2Course?.courseUrl ? (
-                    <a
-                      href={banner2Course.courseUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      onClick={() => trackCTAClick(`coursera_hero_banner_2_${banner2Course.description}`)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-bold text-xs text-neutral-900 bg-white hover:bg-neutral-100 shadow-sm transition-all"
-                    >
-                      <span>{b2DescLower.includes("counselling") ? "Get started" : "Enroll now"}</span>
-                      <ArrowRightIcon className="w-3.5 h-3.5" />
-                    </a>
-                  ) : (
-                    <a
-                      href={buildWhatsAppUrl()}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md font-bold text-xs text-neutral-900 bg-white hover:bg-neutral-100 shadow-sm transition-all"
-                    >
-                      <span>Get started</span>
-                      <ArrowRightIcon className="w-3.5 h-3.5" />
-                    </a>
-                  )}
                 </div>
               </div>
 
@@ -681,7 +770,7 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
                 type="button"
                 onClick={handlePrev}
                 aria-label="Previous course slide"
-                className="absolute -left-2 sm:-left-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white text-gray-800 shadow-md hover:shadow-lg border border-gray-200 flex items-center justify-center transition-all opacity-80 sm:opacity-0 sm:group-hover:opacity-100 hover:scale-105 focus:opacity-100 cursor-pointer"
+                className="absolute left-1 sm:-left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white text-gray-800 shadow-md hover:shadow-lg border border-gray-200 flex items-center justify-center transition-all opacity-95 sm:opacity-0 sm:group-hover:opacity-100 hover:scale-105 focus:opacity-100 cursor-pointer touch-manipulation before:absolute before:-inset-2 before:content-['']"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
@@ -692,7 +781,7 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
                 type="button"
                 onClick={handleNext}
                 aria-label="Next course slide"
-                className="absolute -right-2 sm:-right-3 top-1/2 -translate-y-1/2 z-20 w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-white text-gray-800 shadow-md hover:shadow-lg border border-gray-200 flex items-center justify-center transition-all opacity-80 sm:opacity-0 sm:group-hover:opacity-100 hover:scale-105 focus:opacity-100 cursor-pointer"
+                className="absolute right-1 sm:-right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white text-gray-800 shadow-md hover:shadow-lg border border-gray-200 flex items-center justify-center transition-all opacity-95 sm:opacity-0 sm:group-hover:opacity-100 hover:scale-105 focus:opacity-100 cursor-pointer touch-manipulation before:absolute before:-inset-2 before:content-['']"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
@@ -702,27 +791,49 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
           )}
         </div>
 
-        {/* Carousel Pagination Dots (Coursera style: active pill + round dots, dynamic & interactive) */}
-        <div className="flex items-center gap-2 justify-center mb-8" role="tablist" aria-label="Course carousel navigation">
-          {(courses.length > 0 ? courses : [1, 2, 3]).map((item, idx) => {
-            const isActive = idx === (slideIndex % Math.max(courses.length, 1));
-            const label = typeof item === "object" ? item.description : `Slide ${idx + 1}`;
-            return (
-              <button
-                key={typeof item === "object" ? item.courseUrl || idx : idx}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                aria-label={`Go to slide ${idx + 1}: ${label}`}
-                onClick={() => setSlideIndex(idx)}
-                className={`transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#0056D2] cursor-pointer ${
-                  isActive
-                    ? "w-7 h-2 rounded-full bg-[#0056D2]"
-                    : "w-2 h-2 rounded-full bg-gray-300 hover:bg-gray-400"
-                }`}
-              />
-            );
-          })}
+        {/* Carousel Progress Indicators (Slowly fills up and goes to next slide) */}
+        <div className="flex items-center justify-center mb-8">
+          <div
+            className="flex items-center gap-1.5 sm:gap-2.5 py-2 select-none"
+            role="tablist"
+            aria-label="Course carousel navigation"
+          >
+            {(courses.length > 0 ? courses : [1, 2, 3]).map((item, idx) => {
+              const isActive = idx === activeIndex;
+              const label = typeof item === "object" ? item.description : `Slide ${idx + 1}`;
+              return (
+                <button
+                  key={typeof item === "object" ? item.courseUrl || idx : idx}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  aria-label={`Go to slide ${idx + 1}: ${label}`}
+                  onClick={() => goToSlide(idx)}
+                  className="flex items-center justify-center py-3 px-1.5 min-w-[36px] min-h-[36px] focus:outline-none cursor-pointer group"
+                >
+                  {isActive ? (
+                    /* Active indicator: elongated pill that slowly fills up with Coursera blue */
+                    <div
+                      className="w-12 sm:w-14 h-2 rounded-full bg-gray-200 overflow-hidden relative shadow-2xs transition-all duration-300"
+                      title={`Slide ${idx + 1} (${Math.round(progress)}%)`}
+                    >
+                      <div
+                        className="h-full bg-[#0056D2] rounded-full will-change-[width]"
+                        style={{
+                          width: `${progress}%`,
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    /* Inactive indicator: sleek dot */
+                    <span
+                      className="w-2.5 h-2.5 rounded-full bg-gray-300 group-hover:bg-gray-400 group-hover:scale-125 transition-all duration-300"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* ── 3. COURSERA "NEW AND POPULAR" 3-COLUMN COURSE GRID ───────────── */}
@@ -916,7 +1027,7 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
                     <span>Quick Revision</span>
                     <span>•</span>
                     <span className="flex items-center gap-0.5 font-bold text-gray-900">
-                      <StarIcon /> 4.8
+                      <StarIcon /> {siteConfig.stats.playStoreRating}
                     </span>
                   </div>
                 </div>
@@ -943,7 +1054,7 @@ function Hero({ courses, testimonials, links, loadingCourses }: HeroProps) {
                     <span>Google Play</span>
                     <span>•</span>
                     <span className="flex items-center gap-0.5 font-bold text-gray-900">
-                      <StarIcon /> 4.8
+                      <StarIcon /> {siteConfig.stats.playStoreRating}
                     </span>
                   </div>
                 </div>
@@ -1082,7 +1193,7 @@ function FeaturedCoursesSection({ courses, loading, error }: { courses: Course[]
   if (!loading && courses.length === 0 && !error) return null;
 
   return (
-    <section id="courses" className="py-16 md:py-20 bg-white border-t border-gray-200">
+    <section id="courses" className="py-10 sm:py-16 md:py-20 bg-white border-t border-gray-200 scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal>
           <div className="mb-8 max-w-2xl">
@@ -1099,7 +1210,7 @@ function FeaturedCoursesSection({ courses, loading, error }: { courses: Course[]
           <p className="text-center text-gray-500 text-sm py-10">Courses temporarily unavailable — please check back soon.</p>
         )}
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {loading
             ? Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="bg-white border border-gray-200 rounded-xl p-4 animate-pulse">
@@ -1138,10 +1249,10 @@ function CategoryBlocksSection() {
   }
 
   return (
-    <section id="categories" className="py-16 md:py-20 bg-[#F5F7FA] border-t border-gray-200">
+    <section id="categories" className="py-10 sm:py-16 md:py-20 bg-[#F5F7FA] border-t border-gray-200 scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal>
-          <div className="mb-10 max-w-2xl">
+          <div className="mb-8 sm:mb-10 max-w-2xl">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mb-2">
               Explore by Academic Goal
             </h2>
@@ -1151,12 +1262,12 @@ function CategoryBlocksSection() {
           </div>
         </Reveal>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-5 sm:gap-6 md:grid-cols-3">
           {categoryBlocks.map((block, idx) => {
             const href = resolveUrl(block);
             return (
               <Reveal key={block.id} delay={idx + 1}>
-                <article className="h-full flex flex-col p-6 sm:p-7 rounded-2xl bg-white border border-gray-200 hover:border-[#0056D2] hover:shadow-md transition-all duration-200">
+                <article className="h-full flex flex-col p-5 sm:p-7 rounded-2xl bg-white border border-gray-200 hover:border-[#0056D2] hover:shadow-md transition-all duration-200">
                   <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-2xl mb-4">
                     {block.emoji}
                   </div>
@@ -1203,10 +1314,10 @@ function StudentFeedbackSection({ items, loading, error }: { items: PucTestimoni
   if (!loading && items.length === 0 && !error) return null;
 
   return (
-    <section id="feedback" className="py-16 md:py-20 bg-white border-t border-gray-200">
+    <section id="feedback" className="py-10 sm:py-16 md:py-20 bg-white border-t border-gray-200 scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal>
-          <div className="mb-10 max-w-2xl">
+          <div className="mb-8 sm:mb-10 max-w-2xl">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mb-2">
               From the Physics Pep Talk Community
             </h2>
@@ -1216,7 +1327,7 @@ function StudentFeedbackSection({ items, loading, error }: { items: PucTestimoni
           </div>
         </Reveal>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((t, i) => (
             <Reveal key={t.youtubeUrl || i} delay={(i % 3) + 1}>
               <article className="flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-all">
@@ -1270,10 +1381,10 @@ function StudentFeedbackSection({ items, loading, error }: { items: PucTestimoni
 
 function YouTubeSection() {
   return (
-    <section id="youtube" className="py-16 md:py-20 bg-[#F5F7FA] border-t border-gray-200">
+    <section id="youtube" className="py-10 sm:py-16 md:py-20 bg-[#F5F7FA] border-t border-gray-200 scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal>
-          <div className="mb-10 max-w-2xl">
+          <div className="mb-8 sm:mb-10 max-w-2xl">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mb-2">
               Free Lectures on YouTube
             </h2>
@@ -1283,10 +1394,10 @@ function YouTubeSection() {
           </div>
         </Reveal>
 
-        <div className="grid gap-6 md:grid-cols-2 max-w-4xl">
+        <div className="grid gap-5 sm:gap-6 md:grid-cols-2 max-w-4xl">
           {youtubeChannels.map((ch, idx) => (
             <Reveal key={ch.id} delay={idx + 1}>
-              <article className="h-full flex flex-col p-6 rounded-2xl bg-white border border-gray-200 hover:border-[#0056D2] hover:shadow-md transition-all">
+              <article className="h-full flex flex-col p-5 sm:p-6 rounded-2xl bg-white border border-gray-200 hover:border-[#0056D2] hover:shadow-md transition-all">
                 <div className="flex items-center gap-3.5 mb-4">
                   <div className="w-11 h-11 rounded-xl bg-red-600 flex items-center justify-center flex-shrink-0 text-white shadow-xs">
                     <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
@@ -1381,10 +1492,10 @@ function ContactSection() {
   ];
 
   return (
-    <section id="contact" className="py-16 md:py-20 bg-white border-t border-gray-200">
+    <section id="contact" className="py-10 sm:py-16 md:py-20 bg-white border-t border-gray-200 scroll-mt-20 sm:scroll-mt-24 md:scroll-mt-28">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <Reveal>
-          <div className="mb-10 max-w-2xl">
+          <div className="mb-8 sm:mb-10 max-w-2xl">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight mb-2">
               Need Admission Guidance?
             </h2>
@@ -1394,14 +1505,14 @@ function ContactSection() {
           </div>
         </Reveal>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 max-w-5xl">
+        <div className="grid gap-3.5 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 max-w-5xl">
           {items.map((item, idx) => (
             <Reveal key={item.key} delay={idx + 1}>
               <a
                 href={item.href}
                 {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
                 onClick={item.onClick}
-                className="group flex flex-col p-5 rounded-2xl bg-white border border-gray-200 hover:border-[#0056D2] hover:shadow-md transition-all"
+                className="group flex flex-col p-4 sm:p-5 rounded-2xl bg-white border border-gray-200 hover:border-[#0056D2] hover:shadow-md transition-all min-h-[140px]"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center">
@@ -1628,6 +1739,9 @@ export default function App() {
 
             {/* Direct Contact & Support */}
             <ContactSection />
+
+            {/* Microsoft Learn Styled Landing Page Quick Nav */}
+            <LandingQuickNav />
           </>
         )}
 

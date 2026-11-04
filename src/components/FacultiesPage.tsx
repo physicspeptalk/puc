@@ -158,14 +158,14 @@ export default function FacultiesPage() {
       </div>
 
       {/* ── Coursera Header Hero ───────────────────────────────────── */}
-      <section className="bg-white border-b border-gray-200 py-10 md:py-14" aria-label="Faculties overview">
+      <section className="bg-white border-b border-gray-200 py-8 sm:py-10 md:py-14" aria-label="Faculties overview">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-blue-50 border border-blue-200 text-[#0056D2] text-xs font-bold uppercase tracking-wider mb-3">
               <span>Karnataka&apos;s Top Educators</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
               Meet Our Expert Faculties
             </h1>
 
@@ -204,7 +204,7 @@ export default function FacultiesPage() {
       </section>
 
       {/* ── Faculty Cards Grid ────────────────────────────────────── */}
-      <section className="py-12 md:py-16">
+      <section className="py-10 sm:py-12 md:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -249,7 +249,7 @@ export default function FacultiesPage() {
           )}
 
           {/* ── Bottom Admissions Callout ───────────────────────────── */}
-          <div className="mt-12 rounded-2xl bg-white border border-gray-200 p-6 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xs">
+          <div className="mt-12 rounded-2xl bg-white border border-gray-200 p-5 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xs">
             <div>
               <span className="text-[10px] font-bold text-[#0056D2] uppercase tracking-wider block mb-1">
                 Direct Mentorship
@@ -262,10 +262,10 @@ export default function FacultiesPage() {
               </p>
             </div>
 
-            <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto flex-shrink-0">
               <a
                 href="/#courses"
-                className="px-5 py-2.5 rounded-md font-bold text-xs text-[#0056D2] bg-blue-50 hover:bg-blue-100 transition-colors"
+                className="w-full sm:w-auto text-center px-5 py-2.5 rounded-md font-bold text-xs text-[#0056D2] bg-blue-50 hover:bg-blue-100 transition-colors"
               >
                 View Batches
               </a>
@@ -273,7 +273,7 @@ export default function FacultiesPage() {
                 href={buildWhatsAppUrl("Hi, I want to talk to an academic counsellor about faculty batches.")}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-5 py-2.5 rounded-md font-bold text-xs text-white bg-[#0056D2] hover:bg-[#00419e] shadow-xs transition-colors flex items-center gap-1.5"
+                className="w-full sm:w-auto justify-center px-5 py-2.5 rounded-md font-bold text-xs text-white bg-[#0056D2] hover:bg-[#00419e] shadow-xs transition-colors flex items-center gap-1.5"
               >
                 <span>WhatsApp Desk</span>
                 <ArrowRightIcon className="w-3.5 h-3.5" />

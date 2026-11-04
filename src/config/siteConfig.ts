@@ -22,7 +22,7 @@ export const siteConfig = {
   stats: {
     paidStudents: "5,000+",
     counselledStudents: "1,000+",
-    playStoreRating: "4.8",
+    playStoreRating: "4.5",
     playStoreLabel: "On Play Store",
   },
 
@@ -46,11 +46,11 @@ export const siteConfig = {
 // ─── Navigation ─────────────────────────────────────────────────────────────
 
 export const navLinks = [
-  { label: "Courses", href: "#courses" },
-  { label: "YouTube", href: "#youtube" },
-  { label: "Feedback", href: "#feedback" },
+  { label: "Courses", href: "/#courses" },
+  { label: "YouTube", href: "/#youtube" },
+  { label: "Feedback", href: "/#feedback" },
   { label: "Faculties", href: "/faculties/" },
-  { label: "Contact", href: "#contact" },
+  { label: "Contact", href: "/#contact" },
   { label: "Main Website", href: "https://physicspeptalk.com", external: true },
   { label: "Instagram", href: "https://www.instagram.com/physics_pep_talk", external: true },
 ] as const;
