@@ -84,7 +84,7 @@
   }
 
   body {
-    @apply bg-surface-950 text-ink-50 antialiased selection:bg-primary-500 selection:text-white;
+    @apply bg-[#F5F7FA] text-gray-900 antialiased selection:bg-[#0056D2] selection:text-white;
     font-feature-settings: "cv02","cv03","cv04","cv11";
     overflow-x: hidden;
   }
@@ -243,6 +243,36 @@
 @keyframes mapFloat {
   0%,100% { background-position: 0 0; }
   50%     { background-position: 8px 8px; }
+}
+
+@keyframes carouselSlideFade {
+  0% {
+    opacity: 0.65;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.carousel-slide-fade {
+  animation: carouselSlideFade 500ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Ensure markdown tables and pre blocks scroll horizontally on mobile without breaking layout */
+.prose table {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.prose pre {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */

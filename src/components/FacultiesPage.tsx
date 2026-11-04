@@ -2,364 +2,286 @@
  * FacultiesPage.tsx
  *
  * Renders the /faculties/ page.
- * Includes: 3D loading screen, animated hero banner, faculty grid.
- * Matches the dark futuristic design system (indigo/teal palette, grid bg, particles).
+ * Coursera Design System:
+ * - Clean light canvas (#F5F7FA).
+ * - Breadcrumb navigation.
+ * - Coursera page hero with academic credentials and trust proof metrics.
+ * - 4-column responsive faculty cards with crisp borders, subject badges, experience indicators, and WhatsApp guidance CTAs.
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { fetchFaculties, type Faculty } from "../services/facultyService";
-import { PageLoader } from "./PageLoader";
+import { buildWhatsAppUrl } from "../config/siteConfig";
 
-// ─── Particle helpers ──────────────────────────────────────────────────────────
-
-function HeroParticles() {
+function ArrowRightIcon({ className = "w-3.5 h-3.5" }: { className?: string }) {
   return (
-    <div className="page-hero-particles" aria-hidden="true">
-      {Array.from({ length: 14 }).map((_, i) => (
-        <div
-          key={i}
-          className="page-hero-particle"
-          style={{
-            "--hp-x":    `${(i * 43 + 7) % 100}%`,
-            "--hp-delay":`${(i * 0.27) % 2.5}s`,
-            "--hp-dur":  `${2.2 + (i % 4) * 0.5}s`,
-            "--hp-size": `${2 + (i % 3)}px`,
-          } as React.CSSProperties}
-        />
-      ))}
-    </div>
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+    </svg>
   );
 }
 
-// ─── 3-D orbital accent SVG (decorative, right side of hero) ──────────────────
-
-function HeroOrbitalAccent() {
+function StarIcon({ className = "w-3.5 h-3.5 text-amber-500 fill-amber-500" }: { className?: string }) {
   return (
-    <div className="page-hero-3d" aria-hidden="true">
-      <svg width="280" height="280" viewBox="0 0 280 280" fill="none">
-        {/* Outer ring */}
-        <ellipse cx="140" cy="140" rx="130" ry="50"
-          stroke="rgba(99,102,241,0.4)" strokeWidth="1.5"
-          strokeDasharray="8 5"/>
-        {/* Middle ring */}
-        <ellipse cx="140" cy="140" rx="100" ry="100"
-          stroke="rgba(99,102,241,0.2)" strokeWidth="1"
-          strokeDasharray="4 8"/>
-        {/* Inner ring */}
-        <ellipse cx="140" cy="140" rx="70" ry="28"
-          stroke="rgba(20,184,138,0.35)" strokeWidth="1.5"
-          strokeDasharray="6 4"/>
-        {/* Nucleus glow */}
-        <circle cx="140" cy="140" r="18" fill="url(#fac-grad)" opacity="0.9"/>
-        <circle cx="140" cy="140" r="28" fill="rgba(99,102,241,0.08)"/>
-        {/* Electron dots */}
-        <circle cx="270" cy="140" r="5" fill="rgba(99,102,241,0.9)" filter="url(#fac-glow)"/>
-        <circle cx="140" cy="10"  r="5" fill="rgba(20,184,138,0.9)"  filter="url(#fac-glow2)"/>
-        <circle cx="80"  cy="190" r="4" fill="rgba(165,180,252,0.8)" filter="url(#fac-glow)"/>
-        <defs>
-          <radialGradient id="fac-grad" cx="35%" cy="35%">
-            <stop offset="0%" stopColor="#a5b4fc"/>
-            <stop offset="100%" stopColor="#4f46e5"/>
-          </radialGradient>
-          <filter id="fac-glow">
-            <feGaussianBlur stdDeviation="3" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-          <filter id="fac-glow2">
-            <feGaussianBlur stdDeviation="3" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
-      </svg>
-    </div>
+    <svg className={className} viewBox="0 0 20 20" aria-hidden="true">
+      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+    </svg>
   );
-}
-
-// ─── Dark mode toggle ──────────────────────────────────────────────────────────
-// (removed — site is dark-only)
-
-// ─── Avatar helpers ────────────────────────────────────────────────────────────
-
-const AVATAR_COLOURS = [
-  "bg-primary-600",
-  "bg-accent-600",
-  "bg-emerald-600",
-  "bg-violet-600",
-  "bg-rose-500",
-  "bg-cyan-600",
-  "bg-amber-500",
-  "bg-indigo-600",
-];
-
-function getAvatarColour(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
-  return AVATAR_COLOURS[Math.abs(hash) % AVATAR_COLOURS.length];
 }
 
 function getInitials(name: string): string {
   return name.trim().split(/\s+/).slice(0, 2).map((w) => w[0]?.toUpperCase() ?? "").join("");
 }
 
-// ─── Faculty card ──────────────────────────────────────────────────────────────
-
 function FacultyCard({ faculty }: { faculty: Faculty }) {
   const [imgErr, setImgErr] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
   const showAvatar = !faculty.pictureUrl || imgErr;
-  const colour = getAvatarColour(faculty.name);
-
-  // 3-D tilt on mouse move
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    const el = cardRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / rect.width;   // 0→1
-    const y = (e.clientY - rect.top)  / rect.height;  // 0→1
-    const rx = (y - 0.5) * -16;  // −8 to +8 deg
-    const ry = (x - 0.5) *  16;
-    const mx = x * 100;
-    const my = y * 100;
-    el.style.setProperty("--rx", `${rx}deg`);
-    el.style.setProperty("--ry", `${ry}deg`);
-    el.style.setProperty("--mx", `${mx}%`);
-    el.style.setProperty("--my", `${my}%`);
-  }
-
-  function handleMouseLeave() {
-    const el = cardRef.current;
-    if (!el) return;
-    el.style.setProperty("--rx", "0deg");
-    el.style.setProperty("--ry", "0deg");
-  }
 
   return (
-    <div
-      className="faculty-card-3d"
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-    >
-      <article
-        ref={cardRef}
-        className="faculty-card-inner flex flex-col overflow-hidden group"
-        style={{ "--rx": "0deg", "--ry": "0deg", "--mx": "50%", "--my": "50%" } as React.CSSProperties}
-      >
-        {/* Specular shine layer */}
-        <div className="faculty-card-shine" aria-hidden="true" />
+    <article className="bg-white rounded-2xl border border-gray-200/90 hover:border-[#0056D2] hover:shadow-lg transition-all duration-300 flex flex-col overflow-hidden group">
+      {/* Photo / Avatar */}
+      <div className="relative w-full aspect-[4/5] bg-gray-100 overflow-hidden flex-shrink-0">
+        {showAvatar ? (
+          <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#00255D] to-[#0056D2] text-white p-6">
+            <span className="text-4xl font-extrabold tracking-tight select-none mb-1">
+              {getInitials(faculty.name)}
+            </span>
+            <span className="text-[11px] font-semibold text-blue-200 tracking-wider uppercase">
+              {faculty.subject || "Educator"}
+            </span>
+          </div>
+        ) : (
+          <img
+            src={faculty.pictureUrl}
+            alt={`Photo of ${faculty.name}`}
+            className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500 ease-out"
+            loading="lazy"
+            referrerPolicy="no-referrer"
+            onError={() => setImgErr(true)}
+          />
+        )}
 
-        {/* Particle burst */}
-        <div className="fc-particles" aria-hidden="true">
-          {[1,2,3,4,5,6].map((n) => <div key={n} className="fc-particle" />)}
+        {/* Subject Badge */}
+        {faculty.subject && (
+          <div className="absolute top-3 left-3">
+            <span className="bg-[#0056D2] text-white text-[11px] font-bold px-2.5 py-0.5 rounded shadow-xs uppercase tracking-wider">
+              {faculty.subject}
+            </span>
+          </div>
+        )}
+
+        {/* Experience Pill */}
+        {faculty.experience && (
+          <div className="absolute bottom-3 left-3 bg-black/75 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-1 rounded-md flex items-center gap-1.5 shadow-xs">
+            <svg className="w-3 h-3 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span>{faculty.experience} Experience</span>
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-5 flex flex-col flex-1">
+        <h2 className="text-base font-bold text-gray-900 group-hover:text-[#0056D2] transition-colors leading-snug">
+          {faculty.name}
+        </h2>
+        <p className="text-xs font-semibold text-[#0056D2] mt-0.5">
+          {faculty.subject} Specialist
+        </p>
+
+        {faculty.description && (
+          <p className="text-xs text-gray-600 leading-relaxed mt-2.5 flex-1 line-clamp-3">
+            {faculty.description}
+          </p>
+        )}
+
+        {/* Action Link */}
+        <div className="pt-3.5 mt-3.5 border-t border-gray-100 flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Active Mentor
+          </span>
+
+          <a
+            href={buildWhatsAppUrl(`Hi, I would like to know more about batches taught by ${faculty.name}.`)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-xs font-bold text-[#0056D2] hover:text-[#00419e] group-hover:underline"
+          >
+            <span>Ask Guidance</span>
+            <ArrowRightIcon className="w-3 h-3" />
+          </a>
         </div>
-
-        {/* Photo / Avatar */}
-        <div className="relative w-full aspect-[3/4] bg-surface-900 overflow-hidden flex-shrink-0">
-          {showAvatar ? (
-            <div className={`w-full h-full flex items-center justify-center ${colour} relative`}>
-              {/* Orbit ring around avatar initials */}
-              <div className="relative">
-                <div className="faculty-avatar-ring" aria-hidden="true" />
-                <span className="text-white font-display font-bold text-5xl select-none relative z-10">
-                  {getInitials(faculty.name)}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <img
-              src={faculty.pictureUrl}
-              alt={`Photo of ${faculty.name}`}
-              className="w-full h-full object-cover object-top group-hover:scale-110 transition-transform duration-700 ease-out"
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              onError={() => setImgErr(true)}
-            />
-          )}
-          {/* Bottom gradient */}
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-surface-950/90 to-transparent pointer-events-none" />
-
-          {/* Subject badge — levitates on hover */}
-          {faculty.subject && (
-            <div className="faculty-badge absolute bottom-3 left-3">
-              <span className="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-md bg-primary-950/80 border border-primary-700 text-primary-300 uppercase tracking-widest backdrop-blur-sm">
-                {faculty.subject}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="flex flex-col flex-1 p-6 gap-3">
-          <h2 className="text-lg font-display font-bold text-ink-50 leading-tight group-hover:text-primary-200 transition-colors duration-300">
-            {faculty.name}
-          </h2>
-
-          {faculty.experience && (
-            <div className="flex items-center gap-2 text-sm text-surface-400">
-              <svg className="w-4 h-4 flex-shrink-0 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="font-semibold text-surface-300">{faculty.experience}</span>
-              {/^\d/.test(faculty.experience) ? <span className="text-surface-500">years of experience</span> : null}
-            </div>
-          )}
-
-          {faculty.description && (
-            <p className="text-sm text-surface-400 leading-relaxed">{faculty.description}</p>
-          )}
-        </div>
-      </article>
-    </div>
+      </div>
+    </article>
   );
 }
 
-// ─── Skeleton card ─────────────────────────────────────────────────────────────
-
 function SkeletonCard() {
   return (
-    <div className="map-card overflow-hidden animate-pulse">
-      <div className="aspect-[3/4] bg-surface-800" />
-      <div className="p-6 space-y-3">
-        <div className="h-4 bg-surface-800 rounded w-2/3" />
-        <div className="h-3 bg-surface-800 rounded w-1/3" />
-        <div className="h-3 bg-surface-800 rounded w-full" />
-        <div className="h-3 bg-surface-800 rounded w-5/6" />
+    <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden animate-pulse">
+      <div className="aspect-[4/5] bg-gray-200" />
+      <div className="p-5 space-y-3">
+        <div className="h-4 bg-gray-200 rounded w-2/3" />
+        <div className="h-3 bg-gray-200 rounded w-1/3" />
+        <div className="h-3 bg-gray-200 rounded w-full" />
+        <div className="h-3 bg-gray-200 rounded w-4/5" />
       </div>
     </div>
   );
 }
 
-// ─── Page ──────────────────────────────────────────────────────────────────────
-
-interface FacultiesPageProps {
-  // dark-only — no theme props needed
-}
-
-export default function FacultiesPage(_props: FacultiesPageProps = {}) {
+export default function FacultiesPage() {
   const [faculties, setFaculties] = useState<Faculty[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchFaculties()
-      .then(({ faculties: f, error: e }) => { setFaculties(f); setError(e); })
+      .then(({ faculties: f, error: e }) => {
+        setFaculties(f);
+        setError(e);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <PageLoader label="Our Faculties" icon="atom">
-      <div className="min-h-screen bg-surface-950 relative overflow-x-hidden">
+    <div className="bg-[#F5F7FA]">
+      {/* ── Breadcrumb Navigation ─────────────────────────────────── */}
+      <div className="bg-white border-b border-gray-200 text-xs text-gray-500 py-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-2">
+          <a href="/" className="hover:text-[#0056D2] font-medium transition-colors">Home</a>
+          <span className="text-gray-400">/</span>
+          <span className="text-gray-900 font-semibold">Faculties</span>
+        </div>
+      </div>
 
-        {/* Ambient grid background */}
-        <div className="map-bg" aria-hidden="true" />
-
-        {/* ── Sticky nav bar ────────────────────────────────────── */}
-        <header className="sticky top-0 z-40 bg-surface-950/90 backdrop-blur-xl border-b border-surface-800/80">
-          <div className="container-pad py-3 flex items-center gap-3">
-            <a
-              href="/"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-surface-400 hover:text-primary-400 transition-colors duration-200"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Physics Pep Talk
-            </a>
-            <span className="text-surface-700" aria-hidden="true">/</span>
-            <span className="text-sm text-surface-500">Faculties</span>
-            <div className="ml-auto" />
-
-          </div>
-        </header>
-
-        {/* ── Hero banner ───────────────────────────────────────── */}
-        <section className="page-hero" aria-label="Faculties hero">
-          <div className="page-hero-glow" aria-hidden="true" />
-          <HeroParticles />
-          <HeroOrbitalAccent />
-
-          <div className="page-hero-content">
-            <div className="page-hero-eyebrow">
-              <span className="page-hero-eyebrow-dot" aria-hidden="true" />
-              Meet the Team
+      {/* ── Coursera Header Hero ───────────────────────────────────── */}
+      <section className="bg-white border-b border-gray-200 py-8 sm:py-10 md:py-14" aria-label="Faculties overview">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-blue-50 border border-blue-200 text-[#0056D2] text-xs font-bold uppercase tracking-wider mb-3">
+              <span>Karnataka&apos;s Top Educators</span>
             </div>
 
-            <h1 className="page-hero-title">
-              Our{" "}
-              <span className="page-hero-title-gradient">Faculties</span>
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 tracking-tight mb-3">
+              Meet Our Expert Faculties
             </h1>
 
-            <p className="page-hero-desc">
-              Experienced educators dedicated to helping PUC students excel in board exams, KCET, and COMEDK.
+            <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-6">
+              Distinguished educators with decades of combined classroom experience, dedicated to simplifying tough physics, chemistry, and mathematics concepts for Karnataka PUC and entrance aspirants.
             </p>
 
-            <div className="page-hero-stats">
-              <div className="page-hero-stat">
-                <span className="page-hero-stat-icon">🎓</span>
+            {/* Academic Proof Strip */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-blue-100 text-[#0056D2] flex items-center justify-center font-bold text-base">🎓</div>
                 <div>
-                  <div className="page-hero-stat-label">Specialisation</div>
-                  <div className="page-hero-stat-value">PUC Physics</div>
+                  <div className="text-[10px] text-gray-500 font-semibold uppercase">Curriculum</div>
+                  <div className="text-xs font-bold text-gray-900">100% Karnataka PUC</div>
                 </div>
               </div>
-              <div className="page-hero-stat">
-                <span className="page-hero-stat-icon">📍</span>
+
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-base">📍</div>
                 <div>
-                  <div className="page-hero-stat-label">Board</div>
-                  <div className="page-hero-stat-value">Karnataka PUC</div>
+                  <div className="text-[10px] text-gray-500 font-semibold uppercase">Experience</div>
+                  <div className="text-xs font-bold text-gray-900">10+ to 34+ Years</div>
                 </div>
               </div>
-              <div className="page-hero-stat">
-                <span className="page-hero-stat-icon">🏆</span>
+
+              <div className="p-3 rounded-xl bg-gray-50 border border-gray-100 flex items-center gap-3 col-span-2 sm:col-span-1">
+                <div className="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-base">🏆</div>
                 <div>
-                  <div className="page-hero-stat-label">Exams Covered</div>
-                  <div className="page-hero-stat-value">KCET · COMEDK</div>
+                  <div className="text-[10px] text-gray-500 font-semibold uppercase">Target Exams</div>
+                  <div className="text-xs font-bold text-gray-900">KCET · COMEDK · Boards</div>
                 </div>
               </div>
             </div>
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ── Faculty grid ──────────────────────────────────────── */}
-        <main id="main-content" className="container-pad py-14 relative z-10">
+      {/* ── Faculty Cards Grid ────────────────────────────────────── */}
+      <section className="py-10 sm:py-12 md:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Academic Leadership &amp; Mentors</h2>
+              <p className="text-xs sm:text-sm text-gray-500 mt-0.5">
+                Full-time educators personally delivering lectures and doubt clearing sessions.
+              </p>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-2xs">
+              <StarIcon />
+              <span>Top Rated Faculty</span>
+            </div>
+          </div>
 
           {error && !loading && (
-            <div role="alert" className="mb-8 p-5 rounded-lg border border-surface-800 bg-surface-900/50 text-surface-400 text-sm">
-              Could not load faculty profiles. Please check your connection and try again.
+            <div role="alert" className="p-4 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm mb-6">
+              Could not load faculty profiles. Please check your internet connection and try again.
             </div>
           )}
 
           {loading && (
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
             </div>
           )}
 
           {!loading && !error && faculties.length === 0 && (
-            <div className="text-center py-24 text-surface-500">
-              <svg className="w-12 h-12 mx-auto mb-4 opacity-30" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <p className="font-medium text-surface-400">No faculty profiles yet.</p>
-              <p className="text-sm mt-1">Check back soon!</p>
+            <div className="text-center py-20 bg-white rounded-2xl border border-gray-200">
+              <p className="font-semibold text-gray-800">No faculty profiles found.</p>
+              <p className="text-xs text-gray-500 mt-1">Please check back soon.</p>
             </div>
           )}
 
           {!loading && faculties.length > 0 && (
-            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
-              {faculties.map((f) => <FacultyCard key={f.name} faculty={f} />)}
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {faculties.map((f) => (
+                <FacultyCard key={f.name} faculty={f} />
+              ))}
             </div>
           )}
-        </main>
 
-        {/* ── Footer strip ──────────────────────────────────────── */}
-        <footer className="border-t border-surface-800 mt-8">
-          <div className="container-pad py-8 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <a href="/" className="text-sm text-surface-500 hover:text-primary-400 transition-colors duration-200">
-              ← Back to home
-            </a>
-            <span className="text-sm text-surface-600">physicspeptalk.com</span>
+          {/* ── Bottom Admissions Callout ───────────────────────────── */}
+          <div className="mt-12 rounded-2xl bg-white border border-gray-200 p-5 sm:p-8 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xs">
+            <div>
+              <span className="text-[10px] font-bold text-[#0056D2] uppercase tracking-wider block mb-1">
+                Direct Mentorship
+              </span>
+              <h3 className="text-lg font-bold text-gray-900">
+                Want to learn directly under our faculty team?
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1 max-w-xl">
+                Enroll in our KCET Fastrack Batch or Board Mastery courses with regular interactive doubt clearance.
+              </p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto flex-shrink-0">
+              <a
+                href="/#courses"
+                className="w-full sm:w-auto text-center px-5 py-2.5 rounded-md font-bold text-xs text-[#0056D2] bg-blue-50 hover:bg-blue-100 transition-colors"
+              >
+                View Batches
+              </a>
+              <a
+                href={buildWhatsAppUrl("Hi, I want to talk to an academic counsellor about faculty batches.")}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto justify-center px-5 py-2.5 rounded-md font-bold text-xs text-white bg-[#0056D2] hover:bg-[#00419e] shadow-xs transition-colors flex items-center gap-1.5"
+              >
+                <span>WhatsApp Desk</span>
+                <ArrowRightIcon className="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
-        </footer>
-      </div>
-    </PageLoader>
+        </div>
+      </section>
+    </div>
   );
 }

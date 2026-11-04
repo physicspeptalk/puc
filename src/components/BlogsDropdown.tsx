@@ -2,28 +2,18 @@
  * BlogsDropdown.tsx
  *
  * Provides two exports:
- *
  *  1. <BlogsDropdownDesktop />
- *     A "Blogs ▾" button for the desktop navigation bar.
- *     Opens a floating panel (click + optional hover) listing published
- *     blog posts fetched from Google Sheets.
+ *     A Coursera-styled "Blogs ▾" dropdown for the desktop header.
+ *     Features:
+ *     - Clean white card with subtle border and elevation shadow (rounded-2xl).
+ *     - Header strip with guide count badge.
+ *     - Rich item list with topic icons, bold titles, excerpt previews, and category badges.
+ *     - Strictly no unstyled bullet points (list-none).
+ *     - Polished "View all guides & blueprints →" footer.
+ *     - Full keyboard accessibility (ArrowDown, ArrowUp, Esc, Enter) and click-outside dismissal.
  *
  *  2. <BlogsAccordionMobile />
- *     A collapsible "Blogs ▾" accordion row for the hamburger menu.
- *     Tapping it reveals nested blog links; selecting one closes the
- *     parent mobile menu via the onClose callback.
- *
- * Both components share the same `useBlogPosts` hook which fires a single
- * fetch request (module-level cached in blogService.ts) on first mount.
- *
- * Accessibility:
- *  - Desktop uses role="menu" / role="menuitem" pattern with
- *    aria-haspopup, aria-expanded, and keyboard navigation (↑↓, Esc, Enter/Space).
- *  - Mobile uses a <button> that toggles aria-expanded on the nested list.
- *  - Focus is trapped into the dropdown on open (first item focused).
- *  - Escape key closes the dropdown.
- *  - Click outside closes the dropdown.
- *  - Animations respect prefers-reduced-motion.
+ *     A clean, bullet-free mobile accordion for the mobile slide menu.
  */
 
 import {
@@ -45,7 +35,7 @@ import {
   trackBlogViewAll,
 } from "../utils/analytics";
 
-// ─── Shared hook ─────────────────────────────────────────────────────────────
+// ─── Shared Hook ─────────────────────────────────────────────────────────────
 
 function useBlogPosts(): {
   posts: BlogPost[];
@@ -58,7 +48,6 @@ function useBlogPosts(): {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
     fetchPublishedBlogs()
       .then(({ posts: fetched, error: err }) => {
         if (cancelled) return;
@@ -80,49 +69,32 @@ function useBlogPosts(): {
   return { posts, loading, error };
 }
 
-// ─── Shared icons ─────────────────────────────────────────────────────────────
+// ─── Helper Functions ────────────────────────────────────────────────────────
 
-function ChevronDown({ className = "w-3 h-3" }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2.5}
-        d="M19 9l-7 7-7-7"
-      />
-    </svg>
-  );
+function getPostIcon(post: BlogPost): string {
+  const text = `${post.title} ${post.tags.join(" ")} ${post.excerpt}`.toLowerCase();
+  if (text.includes("counselling") || text.includes("option entry") || text.includes("comedk") || text.includes("seat")) {
+    return "🧭";
+  }
+  if (text.includes("kcet") || text.includes("entrance") || text.includes("rank")) {
+    return "🎯";
+  }
+  if (text.includes("board") || text.includes("puc") || text.includes("exam") || text.includes("blueprint")) {
+    return "📚";
+  }
+  return "📖";
 }
 
-function ExternalArrow({ className = "w-3 h-3" }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M17 8l4 4m0 0l-4 4m4-4H3"
-      />
-    </svg>
-  );
+function getPostBadge(post: BlogPost): string {
+  if (post.tags.length > 0) return post.tags[0].toUpperCase();
+  const text = `${post.title} ${post.excerpt}`.toLowerCase();
+  if (text.includes("counselling")) return "COUNSELLING";
+  if (text.includes("kcet")) return "KCET PREP";
+  if (text.includes("board")) return "PUC BOARDS";
+  return "BLUEPRINT";
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// DESKTOP DROPDOWN
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Desktop Dropdown ────────────────────────────────────────────────────────
 
 export function BlogsDropdownDesktop() {
   const { posts, loading, error } = useBlogPosts();
@@ -131,11 +103,9 @@ export function BlogsDropdownDesktop() {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLUListElement>(null);
 
-  // ── Close handlers ────────────────────────────────────────────────────────
-
   const close = useCallback(() => setOpen(false), []);
 
-  // Click outside
+  // Click outside to close
   useEffect(() => {
     if (!open) return;
     const handler = (e: MouseEvent) => {
@@ -150,7 +120,7 @@ export function BlogsDropdownDesktop() {
     return () => document.removeEventListener("mousedown", handler);
   }, [open, close]);
 
-  // Escape key
+  // Escape key to close
   useEffect(() => {
     if (!open) return;
     const handler = (e: globalThis.KeyboardEvent) => {
@@ -163,23 +133,26 @@ export function BlogsDropdownDesktop() {
     return () => document.removeEventListener("keydown", handler);
   }, [open, close]);
 
-  // Focus first menu item on open
-  useEffect(() => {
-    if (open && menuRef.current) {
-      const first = menuRef.current.querySelector<HTMLElement>(
-        '[role="menuitem"]'
-      );
-      first?.focus();
+  // Keyboard navigation on button
+  const handleButtonKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      if (!open) {
+        setOpen(true);
+        trackBlogDropdownOpen();
+      }
+      setTimeout(() => {
+        const first = menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]');
+        first?.focus();
+      }, 50);
     }
-  }, [open]);
+  };
 
-  // ── Keyboard navigation inside the menu ───────────────────────────────────
-
+  // Keyboard navigation inside menu
   const handleMenuKeyDown = useCallback(
     (e: KeyboardEvent<HTMLUListElement>) => {
       const items = Array.from(
-        menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ??
-          []
+        menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []
       );
       const idx = items.indexOf(document.activeElement as HTMLElement);
 
@@ -202,8 +175,6 @@ export function BlogsDropdownDesktop() {
     [close]
   );
 
-  // ── Toggle open/close ─────────────────────────────────────────────────────
-
   const toggle = () => {
     setOpen((v) => {
       if (!v) trackBlogDropdownOpen();
@@ -216,145 +187,152 @@ export function BlogsDropdownDesktop() {
     close();
   };
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
   return (
-    <div ref={containerRef} className="relative" style={{ isolation: "isolate" }}>
-      {/* Trigger button */}
+    <div ref={containerRef} className="relative select-none" style={{ isolation: "isolate" }}>
+      {/* Trigger Button */}
       <button
         ref={buttonRef}
         type="button"
         onClick={toggle}
+        onKeyDown={handleButtonKeyDown}
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label="Blogs menu"
         className={`
-          px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-colors
+          px-2.5 py-1.5 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer outline-none focus-visible:ring-1.5 focus-visible:ring-[#0056D2]
           ${
             open
-              ? "text-primary-700 bg-primary-50"
-              : "text-surface-600 hover:text-primary-700 hover:bg-primary-50"
+              ? "text-[#0056D2] bg-blue-50 font-bold"
+              : "text-gray-700 hover:text-[#0056D2] hover:bg-blue-50/60"
           }
         `}
       >
-        Blogs
-        <ChevronDown
+        <span>Blogs</span>
+        <svg
           className={`w-3.5 h-3.5 transition-transform duration-200 ${
-            open ? "rotate-180" : ""
+            open ? "rotate-180 text-[#0056D2]" : "text-gray-400"
           }`}
-        />
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+        </svg>
       </button>
 
-      {/* Dropdown panel */}
+      {/* Floating Dropdown Panel */}
       {open && (
         <div
-          className={`
-            absolute left-0 top-full mt-1.5 z-[200]
-            w-64 bg-white rounded-xl shadow-xl
-            border border-surface-100
-            overflow-hidden
-            blogs-dropdown-animate
-          `}
+          className="absolute left-0 top-full mt-2 z-[200] w-84 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200/90 overflow-hidden animate-in fade-in zoom-in-95 duration-150"
           role="presentation"
-          // Prevent overflow clipping from ancestor overflow:hidden containers
-          style={{ minWidth: "min(16rem, 90vw)" }}
         >
-          {/* Scroll container with max-height */}
+          {/* Header Strip */}
+          <div className="p-3.5 bg-gray-50/80 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#0056D2]" />
+              <span className="text-[11px] font-bold text-gray-900 uppercase tracking-wider">
+                Preparation Guides
+              </span>
+            </div>
+            <span className="text-[10px] font-bold text-[#0056D2] bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+              {posts.length} {posts.length === 1 ? "Guide" : "Guides"}
+            </span>
+          </div>
+
+          {/* Articles List — list-none ensures NO unwanted bullets */}
           <ul
             ref={menuRef}
             role="menu"
             aria-label="Blog posts"
             onKeyDown={handleMenuKeyDown}
-            className="overflow-y-auto"
-            style={{ maxHeight: "min(22rem, 70vh)" }}
+            className="p-2 space-y-1 list-none m-0 max-h-80 overflow-y-auto"
           >
             {loading && (
-              <li
-                role="menuitem"
-                aria-disabled="true"
-                className="px-4 py-3 text-sm text-surface-400 text-center"
-                tabIndex={-1}
-              >
-                Loading blogs…
+              <li role="none" className="p-4 space-y-2.5 animate-pulse list-none">
+                <div className="h-4 bg-gray-100 rounded w-3/4" />
+                <div className="h-3 bg-gray-100 rounded w-1/2" />
+                <div className="h-4 bg-gray-100 rounded w-5/6" />
               </li>
             )}
 
             {!loading && error && (
-              <li
-                role="menuitem"
-                aria-disabled="true"
-                className="px-4 py-3 text-sm text-surface-400 text-center"
-                tabIndex={-1}
-              >
-                Could not load blogs
+              <li role="none" className="p-4 text-xs text-gray-500 text-center list-none">
+                Could not load guides.
               </li>
             )}
 
             {!loading && !error && posts.length === 0 && (
-              <li
-                role="menuitem"
-                aria-disabled="true"
-                className="px-4 py-3 text-sm text-surface-400 text-center"
-                tabIndex={-1}
-              >
-                No posts yet
+              <li role="none" className="p-4 text-xs text-gray-500 text-center list-none">
+                No guides published yet.
               </li>
             )}
 
             {!loading &&
               posts.map((post) => (
-                <li key={post.slug} role="none">
+                <li key={post.slug} role="none" className="list-none m-0 p-0">
                   <a
                     href={buildBlogArticleUrl(post.slug)}
                     role="menuitem"
                     tabIndex={0}
                     onClick={() => handleItemClick(post)}
-                    className="
-                      block px-4 py-2.5 text-sm text-surface-700
-                      hover:text-primary-700 hover:bg-primary-50
-                      focus:outline-none focus-visible:bg-primary-50 focus-visible:text-primary-700
-                      transition-colors leading-snug
-                    "
+                    className="flex items-start gap-3 p-2.5 rounded-xl hover:bg-blue-50/70 focus:bg-blue-50/70 outline-none focus:outline-none focus-visible:ring-1.5 focus-visible:ring-[#0056D2] group transition-all text-left border-l-2 border-transparent hover:border-[#0056D2]"
                   >
-                    {post.title}
+                    {/* Topic Icon Container */}
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 text-[#0056D2] font-bold flex items-center justify-center flex-shrink-0 text-sm group-hover:bg-[#0056D2] group-hover:text-white transition-colors">
+                      {getPostIcon(post)}
+                    </div>
+
+                    {/* Text Details */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-xs font-bold text-gray-900 group-hover:text-[#0056D2] transition-colors line-clamp-1">
+                          {post.title}
+                        </span>
+                        <span className="text-xs text-[#0056D2] opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all flex-shrink-0">
+                          →
+                        </span>
+                      </div>
+
+                      {post.excerpt && (
+                        <p className="text-[11px] text-gray-500 line-clamp-1 mt-0.5 group-hover:text-gray-700">
+                          {post.excerpt}
+                        </p>
+                      )}
+
+                      <span className="inline-block mt-1 text-[9px] font-extrabold uppercase tracking-wider text-[#0056D2] bg-blue-50/80 px-1.5 py-0.2 rounded">
+                        {getPostBadge(post)}
+                      </span>
+                    </div>
                   </a>
                 </li>
               ))}
-
-            {/* Divider + View All */}
-            {!loading && (
-              <li role="none" className="border-t border-surface-100">
-                <a
-                  href={BLOGS_LISTING_URL}
-                  role="menuitem"
-                  tabIndex={0}
-                  onClick={() => { trackBlogViewAll("dropdown"); handleItemClick(); }}
-                  className="
-                    flex items-center justify-between
-                    px-4 py-2.5 text-sm font-semibold
-                    text-primary-600 hover:text-primary-700 hover:bg-primary-50
-                    focus:outline-none focus-visible:bg-primary-50
-                    transition-colors
-                  "
-                >
-                  View All Blogs
-                  <ExternalArrow className="w-3.5 h-3.5 flex-shrink-0" />
-                </a>
-              </li>
-            )}
           </ul>
+
+          {/* Bottom Footer / View All */}
+          <div className="p-2.5 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+            <a
+              href={BLOGS_LISTING_URL}
+              role="menuitem"
+              tabIndex={0}
+              onClick={() => {
+                trackBlogViewAll("dropdown");
+                handleItemClick();
+              }}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-[#0056D2] hover:bg-white hover:shadow-2xs transition-all group"
+            >
+              <span>View all guides &amp; blueprints</span>
+              <span className="group-hover:translate-x-1 transition-transform">→</span>
+            </a>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MOBILE ACCORDION
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Mobile Accordion ────────────────────────────────────────────────────────
 
 interface BlogsAccordionMobileProps {
-  /** Called after the user selects an item so the parent menu can close */
   onClose: () => void;
 }
 
@@ -370,89 +348,92 @@ export function BlogsAccordionMobile({ onClose }: BlogsAccordionMobileProps) {
   };
 
   return (
-    <div>
-      {/* Accordion toggle */}
+    <div className="border-b border-gray-100 pb-1">
+      {/* Accordion Toggle */}
       <button
         type="button"
         aria-expanded={expanded}
         aria-controls={panelId}
         onClick={() => setExpanded((v) => !v)}
         className={`
-          w-full flex items-center justify-between
-          px-3 py-2.5 rounded-lg text-sm font-medium
-          transition-colors
+          w-full flex items-center justify-between px-3 py-3 min-h-[44px] rounded-lg text-sm font-semibold transition-colors
           ${
             expanded
-              ? "text-primary-700 bg-primary-50"
-              : "text-surface-700 hover:text-primary-700 hover:bg-primary-50"
+              ? "text-[#0056D2] bg-blue-50 font-bold"
+              : "text-gray-700 hover:text-[#0056D2] hover:bg-gray-50"
           }
         `}
       >
-        <span>Blogs</span>
-        <ChevronDown
-          className={`w-3.5 h-3.5 transition-transform duration-200 ${
-            expanded ? "rotate-180" : ""
+        <span>Blogs &amp; Guides</span>
+        <svg
+          className={`w-4 h-4 transition-transform duration-200 ${
+            expanded ? "rotate-180 text-[#0056D2]" : "text-gray-400"
           }`}
-        />
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
       </button>
 
-      {/* Nested list */}
+      {/* Nested List — list-none ensures NO bullets */}
       {expanded && (
         <ul
           id={panelId}
           aria-label="Blog posts"
-          className="mt-0.5 ml-3 border-l border-surface-200 pl-3 flex flex-col gap-0.5"
+          className="mt-1 ml-2 border-l-2 border-blue-100 pl-3 flex flex-col gap-1 list-none m-0 p-0"
         >
           {loading && (
-            <li className="px-2 py-2 text-sm text-surface-400">
-              Loading blogs…
+            <li className="px-2 py-3 text-xs text-gray-400 list-none animate-pulse">
+              Loading guides…
             </li>
           )}
 
           {!loading && error && (
-            <li className="px-2 py-2 text-sm text-surface-400">
-              Could not load blogs
+            <li className="px-2 py-3 text-xs text-gray-400 list-none">
+              Could not load guides
             </li>
           )}
 
           {!loading && !error && posts.length === 0 && (
-            <li className="px-2 py-2 text-sm text-surface-400">No posts yet</li>
+            <li className="px-2 py-3 text-xs text-gray-400 list-none">
+              No guides published yet
+            </li>
           )}
 
           {!loading &&
             posts.map((post) => (
-              <li key={post.slug}>
+              <li key={post.slug} className="list-none m-0 p-0">
                 <a
                   href={buildBlogArticleUrl(post.slug)}
                   onClick={() => handleItemClick(post)}
-                  className="
-                    block px-2 py-2 rounded-lg text-sm
-                    text-surface-600 hover:text-primary-700 hover:bg-primary-50
-                    focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400
-                    transition-colors leading-snug
-                  "
+                  className="flex items-center gap-2 px-2.5 py-2.5 min-h-[40px] rounded-lg text-xs font-medium text-gray-700 hover:text-[#0056D2] hover:bg-blue-50 transition-colors"
                 >
-                  {post.title}
+                  <span className="text-sm">{getPostIcon(post)}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="block font-bold text-gray-900 truncate">{post.title}</span>
+                    {post.excerpt && (
+                      <span className="block text-[10px] text-gray-500 truncate">{post.excerpt}</span>
+                    )}
+                  </div>
                 </a>
               </li>
             ))}
 
           {/* View All */}
           {!loading && (
-            <li className="border-t border-surface-100 mt-0.5 pt-0.5">
+            <li className="border-t border-gray-100 mt-1 pt-1 list-none m-0">
               <a
                 href={BLOGS_LISTING_URL}
-                onClick={() => { trackBlogViewAll("mobile_accordion"); handleItemClick(); }}
-                className="
-                  flex items-center gap-1.5 px-2 py-2 rounded-lg
-                  text-sm font-semibold text-primary-600
-                  hover:text-primary-700 hover:bg-primary-50
-                  focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400
-                  transition-colors
-                "
+                onClick={() => {
+                  trackBlogViewAll("mobile_accordion");
+                  handleItemClick();
+                }}
+                className="flex items-center justify-between px-2.5 py-2.5 min-h-[40px] rounded-lg text-xs font-bold text-[#0056D2] hover:bg-blue-50 transition-colors"
               >
-                View All Blogs
-                <ExternalArrow className="w-3.5 h-3.5 flex-shrink-0" />
+                <span>View All Guides &amp; Blueprints</span>
+                <span>→</span>
               </a>
             </li>
           )}
