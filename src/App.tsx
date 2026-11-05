@@ -836,7 +836,13 @@ function Hero({ courses, loadingCourses }: HeroProps) {
                     aria-label={`Slide ${realIdx + 1} of ${effectiveCourses.length}: ${description}`}
                   >
                     <div
-                      className={`relative rounded-2xl md:rounded-3xl ${theme.bg} text-white p-5 sm:p-6 md:p-7 overflow-hidden h-full min-h-[220px] sm:min-h-[240px] md:min-h-[260px] flex flex-col justify-between border ${theme.border} shadow-md`}
+                      onClick={() => {
+                        if (courseUrl) {
+                          window.open(courseUrl, "_blank", "noopener,noreferrer");
+                          trackCTAClick(`hero_banner_${description}`);
+                        }
+                      }}
+                      className={`relative rounded-2xl md:rounded-3xl ${theme.bg} text-white p-5 sm:p-6 md:p-7 overflow-hidden h-full min-h-[220px] sm:min-h-[240px] md:min-h-[260px] flex flex-col justify-between border ${theme.border} shadow-md ${courseUrl ? "cursor-pointer" : ""}`}
                     >
                       {/* Decorative glowing gradient orbs */}
                       <div className={`absolute -right-12 -bottom-12 w-72 h-72 ${theme.glow} rounded-full blur-3xl pointer-events-none`} />
@@ -1001,8 +1007,8 @@ function Hero({ courses, loadingCourses }: HeroProps) {
 
 function CourseCard({ course }: { course: Course }) {
   const [imgErr, setImgErr] = useState(false);
-  return (
-    <article className="group flex flex-col bg-white border border-gray-200 hover:border-[#0056D2] rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-all duration-200">
+  const cardContent = (
+    <article className="group flex flex-col h-full bg-white border border-gray-200 hover:border-[#0056D2] rounded-xl overflow-hidden shadow-xs hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
       <div className="aspect-[16/9] bg-gray-100 relative overflow-hidden">
         {course.thumbnailUrl && !imgErr ? (
           <img
@@ -1040,16 +1046,10 @@ function CourseCard({ course }: { course: Course }) {
             <StarIcon /> 4.9
           </span>
           {course.courseUrl ? (
-            <a
-              href={course.courseUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => trackCTAClick("coursera_course_card_grid")}
-              className="inline-flex items-center gap-1 text-xs font-bold text-[#0056D2] hover:text-[#00419e] hover:underline"
-            >
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-[#0056D2] group-hover:text-[#00419e] group-hover:underline">
               <span>Enroll</span>
               <ExternalIcon className="w-3 h-3" />
-            </a>
+            </span>
           ) : (
             <span className="text-xs text-gray-400">Coming Soon</span>
           )}
@@ -1057,6 +1057,23 @@ function CourseCard({ course }: { course: Course }) {
       </div>
     </article>
   );
+
+  if (course.courseUrl) {
+    return (
+      <a
+        href={course.courseUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={() => trackCTAClick("coursera_course_card_grid")}
+        className="block h-full cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0056D2] rounded-xl"
+        aria-label={`Enroll in ${course.description || "Physics Pep Talk Course"}`}
+      >
+        {cardContent}
+      </a>
+    );
+  }
+
+  return cardContent;
 }
 
 function FeaturedCoursesSection({ courses, loading, error }: { courses: Course[]; loading: boolean; error: string | null }) {
@@ -1181,6 +1198,8 @@ function CategoryBlocksSection() {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function StudentFeedbackSection({ items, loading, error }: { items: PucTestimonial[]; loading: boolean; error: string | null }) {
+  const [activePlayingId, setActivePlayingId] = useState<string | null>(null);
+
   if (!loading && items.length === 0 && !error) return null;
 
   return (
@@ -1198,47 +1217,66 @@ function StudentFeedbackSection({ items, loading, error }: { items: PucTestimoni
         </Reveal>
 
         <div className="grid gap-5 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((t, i) => (
-            <Reveal key={t.youtubeUrl || i} delay={(i % 3) + 1}>
-              <article className="flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-all">
-                <div className="relative aspect-[16/9] bg-black">
-                  <img
-                    src={t.thumbnailUrl}
-                    alt={t.caption || "Student review"}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                  <a
-                    href={t.youtubeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => trackVideoPlay(t.caption || t.youtubeUrl)}
-                    className="absolute inset-0 bg-black/30 hover:bg-black/15 flex items-center justify-center transition-colors"
-                    aria-label="Play testimonial video on YouTube"
-                  >
-                    <span className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center shadow-md hover:scale-105 transition-transform">
-                      <svg className="w-5 h-5 translate-x-0.5 fill-current" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    </span>
-                  </a>
-                </div>
-                {t.caption && (
-                  <div className="p-4 flex-1 flex flex-col justify-between">
-                    <p className="text-xs font-semibold text-gray-800 leading-relaxed line-clamp-2 mb-2">
-                      &ldquo;{t.caption}&rdquo;
-                    </p>
-                    <div className="flex items-center justify-between text-[11px] text-gray-500 font-medium">
-                      <span>Verified Review</span>
-                      <span className="flex items-center gap-0.5 text-amber-500 font-bold">
-                        <StarIcon /> 5.0
-                      </span>
-                    </div>
+          {items.map((t, i) => {
+            const videoKey = t.videoId || t.youtubeUrl || String(i);
+            const isPlaying = activePlayingId === videoKey;
+            const embedSrc = t.embedUrl || (t.videoId ? `https://www.youtube.com/embed/${t.videoId}` : "");
+
+            return (
+              <Reveal key={t.youtubeUrl || i} delay={(i % 3) + 1}>
+                <article className="flex flex-col bg-white border border-gray-200 rounded-xl overflow-hidden shadow-xs hover:shadow-md transition-all">
+                  <div className="relative aspect-[16/9] bg-black">
+                    {isPlaying && embedSrc ? (
+                      <iframe
+                        src={`${embedSrc}?autoplay=1&rel=0`}
+                        title={t.caption || "Student review"}
+                        className="w-full h-full border-0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <>
+                        <img
+                          src={t.thumbnailUrl}
+                          alt={t.caption || "Student review"}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActivePlayingId(videoKey);
+                            trackVideoPlay(t.caption || t.youtubeUrl);
+                          }}
+                          className="absolute inset-0 bg-black/30 hover:bg-black/15 flex items-center justify-center transition-colors cursor-pointer group/play w-full h-full border-0"
+                          aria-label={`Play testimonial video: ${t.caption || "Student review"}`}
+                        >
+                          <span className="w-12 h-12 rounded-full bg-red-600 text-white flex items-center justify-center shadow-md group-hover/play:scale-110 group-hover/play:bg-red-700 transition-all">
+                            <svg className="w-5 h-5 translate-x-0.5 fill-current" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </span>
+                        </button>
+                      </>
+                    )}
                   </div>
-                )}
-              </article>
-            </Reveal>
-          ))}
+                  {t.caption && (
+                    <div className="p-4 flex-1 flex flex-col justify-between">
+                      <p className="text-xs font-semibold text-gray-800 leading-relaxed line-clamp-2 mb-2">
+                        &ldquo;{t.caption}&rdquo;
+                      </p>
+                      <div className="flex items-center justify-between text-[11px] text-gray-500 font-medium">
+                        <span>Verified Review</span>
+                        <span className="flex items-center gap-0.5 text-amber-500 font-bold">
+                          <StarIcon /> 5.0
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </article>
+              </Reveal>
+            );
+          })}
         </div>
       </div>
     </section>
