@@ -38,6 +38,13 @@ describe("testSeriesService", () => {
         expect(result.error).toBeNull();
         expect(Object.keys(result.topics).length).toBeGreaterThan(0);
 
+        // Check that promotional course info was parsed from columns K-O
+        expect(result.promoCourse).toBeDefined();
+        expect(result.promoCourse?.buyUrl).toContain("physicspeptalk.com");
+        expect(result.promoCourse?.thumbnailUrl).toBeTruthy();
+        expect(result.promoCourse?.title).toBeTruthy();
+        expect(result.promoCourse?.description).toBeTruthy();
+
         // SECURITY VERIFICATION: Public questions must NEVER expose answers or explanations
         for (const q of result.questions) {
           expect((q as any).correctAnswer).toBeUndefined();
@@ -51,7 +58,7 @@ describe("testSeriesService", () => {
   });
 
   describe("submitTestAnswers", () => {
-    it("evaluates submitted answers and returns score, accuracy, and answer review with explanations", async () => {
+    it("evaluates submitted answers and returns score, accuracy, answer review, and promoCourse", async () => {
       // First fetch questions so cache / secure records are initialized
       const fetchRes = await fetchSubjectQuestions("chemistry", false);
       expect(fetchRes.questions.length).toBeGreaterThanOrEqual(1);
@@ -73,6 +80,11 @@ describe("testSeriesService", () => {
       expect(evalRes.totalQuestions).toBe(testedQuestions.length);
       expect(evalRes.timeSpentSeconds).toBe(45);
       expect(evalRes.review.length).toBe(testedQuestions.length);
+
+      // Verify promotional course is attached to evaluation result
+      expect(evalRes.promoCourse).toBeDefined();
+      expect(evalRes.promoCourse?.buyUrl).toContain("physicspeptalk.com");
+      expect(evalRes.promoCourse?.title).toBeTruthy();
 
       // Verify that after submission, correct answers and explanations ARE provided
       for (const item of evalRes.review) {

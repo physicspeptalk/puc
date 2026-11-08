@@ -111,7 +111,8 @@ function doGet(e) {
       subjectKey: subjectKey,
       totalQuestions: publicQuestions.length,
       topics: topicCounts,
-      questions: publicQuestions
+      questions: publicQuestions,
+      promoCourse: fullData.promoCourse || null
     };
 
     var outputJson = JSON.stringify(responseData);
@@ -227,7 +228,8 @@ function evaluateSubmission(submission) {
       percentage: percentage,
       accuracy: accuracy,
       timeSpentSeconds: timeSpentSeconds,
-      review: review
+      review: review,
+      promoCourse: fullData.promoCourse || null
     }
   });
 }
@@ -420,7 +422,58 @@ function loadSheetQuestions(tabName, gid) {
     });
   }
 
+  questions.promoCourse = extractPromoFromSheet(values);
   return questions;
+}
+
+function extractPromoFromSheet(values) {
+  if (!values || values.length === 0) return null;
+  var row1 = values[0] || [];
+  var row2 = values[1] || [];
+
+  function cleanPrefix(prefix, val) {
+    var trimmed = String(val || "").trim();
+    if (trimmed.toLowerCase().indexOf(prefix.toLowerCase()) === 0) {
+      return trimmed.substring(prefix.length).trim();
+    }
+    return trimmed;
+  }
+
+  var colThumb = 10, colTag = 11, colTitle = 12, colDesc = 13, colLink = 14;
+  for (var r = 0; r < Math.min(2, values.length); r++) {
+    for (var c = 0; c < values[r].length; c++) {
+      var h = String(values[r][c] || "").trim().toLowerCase();
+      if (h.indexOf("course thumbnail") === 0) colThumb = c;
+      else if (h.indexOf("course tag") === 0) colTag = c;
+      else if (h.indexOf("course name") === 0) colTitle = c;
+      else if (h.indexOf("course description") === 0) colDesc = c;
+      else if (h.indexOf("course link") === 0) colLink = c;
+    }
+  }
+
+  var rawThumb = cleanPrefix("Course Thumbnail", row2[colThumb] || "");
+  var rawTag = cleanPrefix("Course Tag", row2[colTag] || "");
+  var rawTitle = cleanPrefix("Course Name", row2[colTitle] || "");
+  var rawDesc = cleanPrefix("Course Description", row2[colDesc] || "");
+  var rawLink = cleanPrefix("course Link", row2[colLink] || "");
+
+  if (!rawLink && row1.length > 0) {
+    rawThumb = cleanPrefix("Course Thumbnail", row1[colThumb] || "");
+    rawTag = cleanPrefix("Course Tag", row1[colTag] || "");
+    rawTitle = cleanPrefix("Course Name", row1[colTitle] || "");
+    rawDesc = cleanPrefix("Course Description", row1[colDesc] || "");
+    rawLink = cleanPrefix("course Link", row1[colLink] || "");
+  }
+
+  if (!rawLink && !rawTitle && !rawThumb) return null;
+
+  return {
+    thumbnailUrl: rawThumb || "",
+    tag: rawTag || "",
+    title: rawTitle || "",
+    description: rawDesc || "",
+    buyUrl: rawLink || ""
+  };
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────

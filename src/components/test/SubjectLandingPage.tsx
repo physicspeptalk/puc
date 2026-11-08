@@ -103,6 +103,9 @@ export const SubjectLandingPage: React.FC<SubjectLandingPageProps> = ({
   };
 
   const handleTestFinish = (result: TestEvaluationResult) => {
+    if (!result.promoCourse && data?.promoCourse) {
+      result.promoCourse = data.promoCourse;
+    }
     setEvaluationResult(result);
     setMode("results");
     setHasActiveSession(false);

@@ -69,6 +69,14 @@ export interface QuestionReviewItem {
   explanation: string;
 }
 
+export interface PromoCourseInfo {
+  thumbnailUrl: string;
+  tag: string;
+  title: string;
+  description: string;
+  buyUrl: string;
+}
+
 export interface TestEvaluationResult {
   subjectId: SubjectId;
   subjectName: string;
@@ -82,6 +90,7 @@ export interface TestEvaluationResult {
   accuracy: number;
   timeSpentSeconds: number;
   review: QuestionReviewItem[];
+  promoCourse?: PromoCourseInfo | null;
 }
 
 export interface TestSubmissionPayload {
@@ -99,4 +108,5 @@ export interface SubjectFetchResult {
   totalQuestions: number;
   source: "apps_script" | "google_sheets_csv" | "sample_bank";
   error: string | null;
+  promoCourse?: PromoCourseInfo | null;
 }

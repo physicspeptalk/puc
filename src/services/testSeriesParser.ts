@@ -23,8 +23,8 @@
  *   - Handles Unicode characters, Greek mathematical symbols, and LaTeX syntax.
  */
 
-import { parseCsvToArrays } from "./googleSheets";
-import type { SecureQuestionRecord, Question, SubjectId } from "./testSeriesTypes";
+import { parseCsvToArrays, normaliseImageUrl } from "./googleSheets";
+import type { SecureQuestionRecord, Question, SubjectId, PromoCourseInfo } from "./testSeriesTypes";
 
 export interface ParsedSheetData {
   questions: Question[]; // Public questions without answers/explanations
@@ -32,6 +32,84 @@ export interface ParsedSheetData {
   topics: Record<string, number>;
   totalValid: number;
   skippedCount: number;
+  promoCourse?: PromoCourseInfo | null;
+}
+
+export function extractPromoCourse(rows: string[][]): PromoCourseInfo | null {
+  if (!rows || rows.length === 0) return null;
+
+  const row1 = rows[0] || [];
+  const row2 = rows[1] || [];
+
+  function cleanPrefix(prefix: string, val: string): string {
+    const trimmed = (val || "").trim();
+    if (trimmed.toLowerCase().startsWith(prefix.toLowerCase())) {
+      return trimmed.slice(prefix.length).trim();
+    }
+    return trimmed;
+  }
+
+  // Detect column indices dynamically in the first 2 rows
+  let colThumb = 10;
+  let colTag = 11;
+  let colTitle = 12;
+  let colDesc = 13;
+  let colLink = 14;
+
+  for (let r = 0; r < Math.min(2, rows.length); r++) {
+    for (let c = 0; c < rows[r].length; c++) {
+      const h = (rows[r][c] || "").trim().toLowerCase();
+      if (h === "course thumbnail" || h.startsWith("course thumbnail")) colThumb = c;
+      else if (h === "course tag" || h.startsWith("course tag")) colTag = c;
+      else if (h === "course name" || h.startsWith("course name")) colTitle = c;
+      else if (h === "course description" || h.startsWith("course description")) colDesc = c;
+      else if (h === "course link" || h.startsWith("course link")) colLink = c;
+    }
+  }
+
+  // Check row 2 first (Chemistry & Biology format: Row 1 = Headers, Row 2 = Values)
+  let rawThumb = cleanPrefix("Course Thumbnail", row2[colThumb] || "");
+  let rawTag = cleanPrefix("Course Tag", row2[colTag] || "");
+  let rawTitle = cleanPrefix("Course Name", row2[colTitle] || "");
+  let rawDesc = cleanPrefix("Course Description", row2[colDesc] || "");
+  let rawLink = cleanPrefix("course Link", row2[colLink] || "");
+
+  // If row 2 has no link, check row 1 (Physics & Maths format: Header and value in row 1)
+  if (!rawLink && row1.length > 0) {
+    rawThumb = cleanPrefix("Course Thumbnail", row1[colThumb] || "");
+    rawTag = cleanPrefix("Course Tag", row1[colTag] || "");
+    rawTitle = cleanPrefix("Course Name", row1[colTitle] || "");
+    rawDesc = cleanPrefix("Course Description", row1[colDesc] || "");
+    rawLink = cleanPrefix("course Link", row1[colLink] || "");
+  }
+
+  // Fallback: search for HTTP URL in columns 10-14 in first 2 rows
+  if (!rawLink) {
+    for (let r = 0; r < Math.min(2, rows.length); r++) {
+      for (let c = 10; c < Math.min(16, rows[r].length); c++) {
+        const cell = (rows[r][c] || "").trim();
+        if (cell.includes("http://") || cell.includes("https://")) {
+          if (!cell.includes("googleusercontent.com")) {
+            rawLink = cleanPrefix("course Link", cell);
+          } else if (!rawThumb) {
+            rawThumb = cleanPrefix("Course Thumbnail", cell);
+          }
+        }
+      }
+    }
+  }
+
+  if (!rawLink && !rawTitle && !rawThumb) {
+    return null;
+  }
+
+  return {
+    thumbnailUrl: normaliseImageUrl(rawThumb) || "",
+    tag: rawTag || "",
+    title: rawTitle || "",
+    description: rawDesc || "",
+    buyUrl: rawLink || "",
+  };
 }
 
 export function normalizeOptionLetter(val: string): "A" | "B" | "C" | "D" {
@@ -355,11 +433,14 @@ export function parseSheetCsvToQuestions(
     topics[topicVal] = (topics[topicVal] || 0) + 1;
   }
 
+  const promoCourse = extractPromoCourse(rows);
+
   return {
     questions,
     secureRecords,
     topics,
     totalValid: questions.length,
     skippedCount,
+    promoCourse,
   };
 }

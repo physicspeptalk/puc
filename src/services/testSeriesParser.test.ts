@@ -110,5 +110,32 @@ Which is true?","Only I","Only II","Both I and II","Neither","C","Statement I co
       expect(result.questions[0].options.B).toBe("$\\pi/2$");
       expect(result.secureRecords[0].correctAnswer).toBe("B");
     });
+
+    it("extracts promotional course from columns K-O (Chemistry/Bio row 1+2 format)", () => {
+      const csv = `"SUBJECT","TOPIC","QUESTION","a","b","c","d","Corrrect answer","Explanation","","Course Thumbnail","Course Tag","Course Name","Course Description","course Link"
+"Chemistry","Solid State","Sample Q","Opt A","Opt B","Opt C","Opt D","A","Sol","","https://lh3.googleusercontent.com/d/1sJIQAiakF0XBZjycNZtdhkm6r-EUbBaz","Crash Course","Chemistry Mastery 2027","Complete 2nd PUC prep","https://physicspeptalk.com/new-courses/128-sudarshana-2027-kcet-pcm-fastrack"`;
+
+      const result = parseSheetCsvToQuestions(csv, "chemistry", "Chemistry");
+      expect(result.totalValid).toBe(1);
+      expect(result.promoCourse).toBeDefined();
+      expect(result.promoCourse?.title).toBe("Chemistry Mastery 2027");
+      expect(result.promoCourse?.tag).toBe("Crash Course");
+      expect(result.promoCourse?.description).toBe("Complete 2nd PUC prep");
+      expect(result.promoCourse?.buyUrl).toBe("https://physicspeptalk.com/new-courses/128-sudarshana-2027-kcet-pcm-fastrack");
+      expect(result.promoCourse?.thumbnailUrl).toContain("wsrv.nl");
+    });
+
+    it("extracts promotional course from columns K-O (Physics/Maths row 1 combined text format)", () => {
+      const csv = `"SUBJECT","TOPIC","QUESTION","a","b","c","d","Corrrect answer","Explanation","","Course Thumbnail https://lh3.googleusercontent.com/d/1sJIQAiakF0XBZjycNZtdhkm6r-EUbBaz","Course Tag Test","Course Name test name","Course Description test description","course Link https://physicspeptalk.com/new-courses/128-sudarshana-2027-kcet-pcm-fastrack"
+"Physics","Optics","Sample Q","Opt A","Opt B","Opt C","Opt D","A","Sol","","","","","",""`;
+
+      const result = parseSheetCsvToQuestions(csv, "physics", "Physics");
+      expect(result.totalValid).toBe(1);
+      expect(result.promoCourse).toBeDefined();
+      expect(result.promoCourse?.title).toBe("test name");
+      expect(result.promoCourse?.tag).toBe("Test");
+      expect(result.promoCourse?.description).toBe("test description");
+      expect(result.promoCourse?.buyUrl).toBe("https://physicspeptalk.com/new-courses/128-sudarshana-2027-kcet-pcm-fastrack");
+    });
   });
 });

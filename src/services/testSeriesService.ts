@@ -93,6 +93,7 @@ export async function fetchSubjectQuestions(
             totalQuestions: json.questions.length,
             source: "apps_script",
             error: null,
+            promoCourse: json.promoCourse || null,
           };
           memoryCache.set(subjectId, {
             data: result,
@@ -125,6 +126,7 @@ export async function fetchSubjectQuestions(
           totalQuestions: parsed.questions.length,
           source: "google_sheets_csv",
           error: null,
+          promoCourse: parsed.promoCourse || null,
         };
         memoryCache.set(subjectId, {
           data: result,
@@ -161,6 +163,7 @@ export async function fetchSubjectQuestions(
     totalQuestions: publicQuestions.length,
     source: "sample_bank",
     error: null,
+    promoCourse: null,
   };
 
   memoryCache.set(subjectId, {
@@ -235,7 +238,9 @@ export async function submitTestAnswers(
   const cached = memoryCache.get(submission.subjectId);
   const secureRecords = cached?.secureRecords || SAMPLE_QUESTIONS_BY_SUBJECT[submission.subjectId] || [];
 
-  return evaluateTest(secureRecords, submission, subjectTitle);
+  const evaluation = evaluateTest(secureRecords, submission, subjectTitle);
+  evaluation.promoCourse = cached?.data?.promoCourse || null;
+  return evaluation;
 }
 
 // ─── Session Persistence (localStorage) ────────────────────────────────────

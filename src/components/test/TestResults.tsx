@@ -4,10 +4,11 @@
  * Examination scorecard and results breakdown dashboard.
  */
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import type { TestEvaluationResult } from "../../services/testSeriesTypes";
 import { formatTime } from "../../utils/testUtils";
 import AnswerReview from "./AnswerReview";
+import CoursePromoModal from "./CoursePromoModal";
 
 interface TestResultsProps {
   evaluation: TestEvaluationResult;
@@ -23,6 +24,7 @@ export const TestResults: React.FC<TestResultsProps> = ({
   onChangeSubject,
 }) => {
   const reviewRef = useRef<HTMLDivElement>(null);
+  const [isPromoOpen, setIsPromoOpen] = useState<boolean>(Boolean(evaluation.promoCourse));
 
   const scrollToReview = () => {
     reviewRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -161,6 +163,78 @@ export const TestResults: React.FC<TestResultsProps> = ({
           </button>
         </div>
       </section>
+
+      {/* Recommended Course Promotion Card */}
+      {evaluation.promoCourse && (evaluation.promoCourse.title || evaluation.promoCourse.buyUrl) && (
+        <section className="bg-gradient-to-br from-blue-50/90 via-indigo-50/50 to-white rounded-3xl border border-blue-200/80 shadow-md p-6 sm:p-8 flex flex-col md:flex-row items-center gap-6 relative overflow-hidden">
+          {evaluation.promoCourse.thumbnailUrl && (
+            <div className="w-full md:w-56 shrink-0 aspect-video rounded-2xl overflow-hidden border border-gray-200/80 shadow-xs bg-white flex items-center justify-center">
+              <img
+                src={evaluation.promoCourse.thumbnailUrl}
+                alt={evaluation.promoCourse.title || "Course Thumbnail"}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLElement).style.display = "none";
+                }}
+              />
+            </div>
+          )}
+
+          <div className="flex-1 space-y-2 text-left">
+            {evaluation.promoCourse.tag && (
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-200">
+                  {evaluation.promoCourse.tag}
+                </span>
+              </div>
+            )}
+
+            {evaluation.promoCourse.title && (
+              <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+                {evaluation.promoCourse.title}
+              </h3>
+            )}
+
+            {evaluation.promoCourse.description && (
+              <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 whitespace-pre-line">
+                {evaluation.promoCourse.description}
+              </p>
+            )}
+          </div>
+
+          <div className="shrink-0 flex sm:flex-col gap-2 w-full md:w-auto">
+            {evaluation.promoCourse.buyUrl && (
+              <a
+                href={evaluation.promoCourse.buyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#0056D2] hover:bg-[#00419e] text-white text-xs font-bold shadow-xs transition-colors text-center"
+              >
+                <span>Enroll / Buy Course</span>
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                </svg>
+              </a>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsPromoOpen(true)}
+              className="flex-1 md:flex-initial px-4 py-2 rounded-xl border border-blue-200 bg-white hover:bg-blue-50/50 text-[#0056D2] text-xs font-bold transition-colors cursor-pointer text-center"
+            >
+              View Promotion
+            </button>
+          </div>
+        </section>
+      )}
+
+      {/* Promotion Modal Popup */}
+      {evaluation.promoCourse && (
+        <CoursePromoModal
+          promo={evaluation.promoCourse}
+          isOpen={isPromoOpen}
+          onClose={() => setIsPromoOpen(false)}
+        />
+      )}
 
       {/* Detailed Review Section */}
       <div ref={reviewRef}>
