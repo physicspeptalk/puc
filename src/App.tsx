@@ -52,6 +52,9 @@ import BlogListingPage from "./components/BlogListingPage";
 import BlogArticlePage from "./components/BlogArticlePage";
 import FacultiesPage from "./components/FacultiesPage";
 import LandingQuickNav from "./components/LandingQuickNav";
+import SubjectLandingPage from "./components/test/SubjectLandingPage";
+import TestIndexHub from "./components/test/TestIndexHub";
+import type { SubjectId } from "./config/testSeriesConfig";
 
 const CURRENT_YEAR = new Date().getFullYear();
 
@@ -193,6 +196,13 @@ function CourseraTopBar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-9">
         <div className="flex items-center gap-6">
           <a
+            href="/tests"
+            className="text-neutral-300 hover:text-white transition-colors py-2 leading-none flex items-center gap-1.5 font-medium"
+          >
+            <span>Online Test Series</span>
+            <span className="text-[9px] bg-[#0056D2] text-white px-1.5 py-0.2 rounded font-bold">PUC / KCET</span>
+          </a>
+          <a
             href="https://counselling.physicspeptalk.com/kcet/"
             target="_blank"
             rel="noopener noreferrer"
@@ -301,6 +311,13 @@ function Header() {
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
               </svg>
+            </a>
+            <a
+              href="/tests"
+              className="text-xs font-semibold text-gray-700 hover:text-[#0056D2] px-2 py-1.5 transition-colors flex items-center gap-1"
+            >
+              <span>Online Tests</span>
+              <span className="text-[9px] bg-blue-100 text-[#0056D2] px-1 py-0.2 rounded font-bold uppercase">MCQ</span>
             </a>
             <a
               href="/faculties/"
@@ -1525,17 +1542,34 @@ function Footer() {
 // ROUTER
 // ─────────────────────────────────────────────────────────────────────────────
 
-function parseRoute(pathname: string): { page: "home" | "blog-listing" | "blog-article" | "faculties"; slug?: string } {
-  const path = pathname.replace(/\/+$/, "") || "/";
-  if (path === "/blogs" || pathname === "/blogs/") return { page: "blog-listing" };
-  const blogArticleMatch = pathname.match(/^\/blogs\/([^/]+)\/?$/);
+export type AppRoute =
+  | { page: "home" }
+  | { page: "blog-listing" }
+  | { page: "blog-article"; slug: string }
+  | { page: "faculties" }
+  | { page: "test-hub" }
+  | { page: "test-subject"; subject: SubjectId };
+
+export function parseRoute(pathname: string): AppRoute {
+  const path = pathname.replace(/\/+$/, "").toLowerCase() || "/";
+
+  if (path === "/blogs") return { page: "blog-listing" };
+  const blogArticleMatch = pathname.match(/^\/blogs\/([^/]+)\/?$/i);
   if (blogArticleMatch) return { page: "blog-article", slug: blogArticleMatch[1] };
-  if (path === "/faculties" || pathname === "/faculties/") return { page: "faculties" };
+  if (path === "/faculties") return { page: "faculties" };
+
+  // Online Test Series Routes
+  if (path === "/test" || path === "/tests") return { page: "test-hub" };
+  if (path === "/test/physics" || path === "/test/phy" || path === "/tests/physics" || path === "/tests/phy") return { page: "test-subject", subject: "physics" };
+  if (path === "/test/chemistry" || path === "/test/chem" || path === "/tests/chemistry" || path === "/tests/chem") return { page: "test-subject", subject: "chemistry" };
+  if (path === "/test/maths" || path === "/test/math" || path === "/test/mathematics" || path === "/tests/maths" || path === "/tests/math" || path === "/tests/mathematics") return { page: "test-subject", subject: "maths" };
+  if (path === "/test/bio" || path === "/test/biology" || path === "/tests/bio" || path === "/tests/biology") return { page: "test-subject", subject: "bio" };
+
   return { page: "home" };
 }
 
 function useRoute() {
-  const [route, setRoute] = useState(() => parseRoute(window.location.pathname));
+  const [route, setRoute] = useState<AppRoute>(() => parseRoute(window.location.pathname));
   useEffect(() => {
     const handler = () => setRoute(parseRoute(window.location.pathname));
     window.addEventListener("popstate", handler);
@@ -1590,10 +1624,20 @@ export default function App() {
       trackPageView(`/blogs/${route.slug}/`, `Blog Article — ${route.slug}`);
     } else if (route.page === "faculties") {
       trackPageView("/faculties/", "Our Faculties — Physics Pep Talk");
+    } else if (route.page === "test-hub") {
+      trackPageView("/test/", "Online Test Series — Physics Pep Talk");
+    } else if (route.page === "test-subject") {
+      trackPageView(`/test/${route.subject}/`, `${route.subject.toUpperCase()} Test Series — Physics Pep Talk`);
     } else {
       trackPageView("/", "Home — Physics Pep Talk");
     }
   }, [route]);
+
+  const handleNavigateSubject = (subjectId: SubjectId) => {
+    window.history.pushState(null, "", `/test/${subjectId}`);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div className="min-h-screen bg-[#F5F7FA] text-gray-900 font-sans antialiased selection:bg-[#0056D2] selection:text-white flex flex-col justify-between">
@@ -1648,6 +1692,17 @@ export default function App() {
         {route.page === "blog-listing" && <BlogListingPage />}
         {route.page === "blog-article" && route.slug && <BlogArticlePage slug={route.slug} />}
         {route.page === "faculties" && <FacultiesPage />}
+
+        {/* Online Test Series Views */}
+        {route.page === "test-hub" && (
+          <TestIndexHub onSelectSubject={handleNavigateSubject} />
+        )}
+        {route.page === "test-subject" && (
+          <SubjectLandingPage
+            subjectId={route.subject}
+            onNavigateSubject={handleNavigateSubject}
+          />
+        )}
       </main>
 
       <Footer />
