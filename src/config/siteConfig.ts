@@ -47,6 +47,7 @@ export const siteConfig = {
 
 export const navLinks = [
   { label: "Courses", href: "/#courses" },
+  { label: "Online Tests", href: "/tests" },
   { label: "YouTube", href: "/#youtube" },
   { label: "Feedback", href: "/#feedback" },
   { label: "Faculties", href: "/faculties/" },
